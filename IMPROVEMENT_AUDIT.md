@@ -36,11 +36,11 @@ The original analysis and implementation order were written before changes in [I
 5. Real multi-tab workflow: a first-tab draft remained exportable after a second tab saved. Loading the newest workspace retained the second tab's change. The downloaded backup independently contained the first draft and its correct time.
 6. Re-run all checks after the fixes, deploy, verify public health/UI/runtime logs, then document actual provider acceptance separately.
 
-Latest complete local run: **84 Node tests + 20 component/axe tests = 104 passing tests**, with lint, strict types, production build, asset budgets, formatting and full dependency audit passing. The dependency audit reported **zero known vulnerabilities** at this check.
+Latest complete local run: **89 Node tests + 20 component/axe tests = 109 passing tests**, with lint, strict types, production build, asset budgets, formatting and full dependency audit passing. The dependency audit reported **zero known vulnerabilities** at this check.
 
-The latest core coverage report (server, domain, planning, repository and legacy storage utilities) was **97.29% lines, 92.00% branches, 89.90% functions**. The component coverage gate measures EventForm, Guide, DownloadLink and the typed client; it is not presented as coverage of every UI line. All nine views have structural axe tests. Core minimums are 85% lines/functions and 75% branches. Component minimums are 80% lines/statements/functions and 70% branches. Coverage is bounded evidence, not a competition score.
+The latest core coverage report (server, domain, planning, repository and legacy storage utilities) was **97.43% lines, 92.51% branches, 90.29% functions**. The component coverage gate measures EventForm, Guide, DownloadLink and the typed client; it is not presented as coverage of every UI line. All nine views have structural axe tests. Core minimums are 85% lines/functions and 75% branches. Component minimums are 80% lines/statements/functions and 70% branches. Coverage is bounded evidence, not a competition score.
 
-The measured initial JavaScript is 369,359 bytes / 114,458 bytes gzip; CSS is 59,034 bytes / 12,580 bytes gzip. The initial JavaScript remains under the existing 400 KB / 125 KB gzip limit; CSS remains under 75 KB / 16 KB gzip. Secondary views, including Event guide, load on demand. There are no additional runtime UI libraries or hosted database costs.
+The measured initial JavaScript is 369,388 bytes / 114,483 bytes gzip; CSS is 59,034 bytes / 12,580 bytes gzip. The initial JavaScript remains under the existing 400 KB / 125 KB gzip limit; CSS remains under 75 KB / 16 KB gzip. Secondary views, including Event guide, load on demand. There are no additional runtime UI libraries or hosted database costs.
 
 ## Deployment and AI acceptance
 
@@ -74,3 +74,15 @@ The first Render build of 1.1 failed at the new component tests: Render's inheri
 - Plans remain browser-local and unencrypted within the browser profile. This release adds safe same-browser tab coordination, not cloud collaboration or account authentication.
 - AI limits remain per process and reset on restart. A provider-side spending cap remains necessary for monetary limits.
 - Vendor entries, payments and RSVPs are organizer records. The app does not contact, book or pay third parties.
+
+## Real-provider review and final release checks
+
+Commit bc211458f06d8b9d07e65182e1cbdb8801372592 passed GitHub CI run 40221152204 and deployed successfully on Render (dep-dbf4j1jbc2fs738qcql0). Health diagnostics then isolated the remaining AI setup problem: the OpenRouter key was configured but the private access code was still a placeholder. Only AI_ACCESS_CODE was replaced with a cryptographically random private value through the Render connector; the existing API key was preserved and never read. Configuration redeploy dep-dbf4k0brjlhs73ffq3cg became live. Health returned version 1.1.0 with all three AI readiness flags true, and the live catalog returned 467 text-capable routes.
+
+Three initial authenticated, synthetic free-router requests produced two rejected invalid responses and one timeout. This is a failed real-provider acceptance run, not proof of successful AI generation. A subsequent test using a specific free model was started, but the execution environment became unavailable before its results could be retrieved. No successful completion is claimed from that run.
+
+The review led to two further improvements: use native JSON response mode only when the catalog advertises support (the free router also supports capability routing), and return safe, distinct failure categories for output-limit, empty-output, JSON, plan-schema and budget errors. Prompt-only compatibility remains available for models without advertised JSON support. The 2,200-token limit, 45-second provider timeout, exact-budget validation and consent/access controls remain unchanged. Regression tests cover compatible-provider routing and redaction of these error categories. Provider documentation: https://openrouter.ai/docs/api_reference/overview and https://openrouter.ai/docs/guides/routing/routers/free-router.
+
+The public browser verified the new Event guide and saved a 15:30 agenda entry, which remained correct after reload. Observed console errors were from the browser extension; none of the observed entries originated in the app. Live /.env, /server/app.ts and /api/not-a-route each returned 404. The HTML response carried CSP, HSTS, no-referrer, nosniff and no-cache headers.
+
+The final provider-fix commit is checked remotely by the same formatting, production-environment build, asset, 109-test, coverage and dependency-audit gates. Its final CI/deployment outcome is recorded after completion. Live generation after that fix remains unverified until an authenticated completion can be observed; readiness alone is not counted as generation success.

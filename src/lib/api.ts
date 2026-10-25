@@ -25,6 +25,7 @@ export const catalogSchema = z.object({
         contextLength: z.number().nonnegative(),
         inputPrice: z.string().max(100),
         outputPrice: z.string().max(100),
+        supportsJson: z.boolean().optional(),
       }),
     )
     .min(1)

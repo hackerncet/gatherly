@@ -7,13 +7,15 @@ import { rateLimit } from "express-rate-limit";
 import { timingSafeEqual } from "node:crypto";
 import { resolve } from "node:path";
 import { z } from "zod";
-import { briefSchema, aiPlanSchema, starterPlan } from "../src/lib/domain.ts";
+import { briefSchema, starterPlan } from "../src/lib/domain.ts";
 import {
   API,
   aiReadiness,
   createModelCatalog,
   readJson,
-  completionSchema,
+  completionParameters,
+  readPlan,
+  PlanResponseError,
   PLANNER_PROMPT,
 } from "./provider.ts";
 const requestSchema = z.object({
@@ -151,7 +153,8 @@ export function createApp({
           "Agree to share your event brief with the AI provider before generating.",
       });
     const catalog = await models();
-    if (!catalog.models.some((m) => m.id === model))
+    const selectedModel = catalog.models.find((m) => m.id === model);
+    if (!selectedModel)
       return res.status(400).json({
         error:
           "This model is unavailable. Refresh the model catalog and choose another.",
@@ -181,6 +184,7 @@ export function createApp({
         body: JSON.stringify({
           model,
           max_tokens: 2200,
+          ...completionParameters(selectedModel),
           messages: [
             {
               role: "system",
@@ -212,24 +216,14 @@ export function createApp({
                 : "The AI provider could not complete this request. Try another model or use the starter plan.",
           });
       }
-      const raw = completionSchema.parse(await readJson(response, 100000));
-      const content = raw.choices[0].message.content;
-      if (typeof content !== "string" || content.length > 50000)
-        throw new Error("invalid content");
-      const clean = content
-        .replace(/^\s*```(?:json)?\s*/, "")
-        .replace(/\s*```\s*$/, "");
-      const plan = aiPlanSchema.parse(JSON.parse(clean));
-      if (
-        plan.budgets.reduce((n, b) => n + b.amount, 0) !== brief.budget ||
-        !plan.budgets.some((b) =>
-          /contingency|reserve|buffer/i.test(b.category),
-        )
-      )
-        throw new Error("budget exceeded");
+      const completion = readPlan(
+        await readJson(response, 100000),
+        brief.budget,
+      );
+      const { plan } = completion;
       return res.json({
         source: "ai",
-        model: raw.model || model,
+        model: completion.model || model,
         plan: {
           ...plan,
           vendors: plan.vendors.length
@@ -240,6 +234,8 @@ export function createApp({
           "AI suggestions are estimates. Review details and confirm prices and availability directly.",
       });
     } catch (error) {
+      if (error instanceof PlanResponseError)
+        return res.status(502).json({ error: error.message, code: error.code });
       return res
         .status(
           error instanceof Error &&

@@ -21,6 +21,7 @@ export interface Model {
   contextLength: number;
   inputPrice: string;
   outputPrice: string;
+  supportsJson?: boolean;
 }
 export type Page =
   | "guide"

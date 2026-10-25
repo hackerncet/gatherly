@@ -579,3 +579,72 @@ test("provider authentication failure is actionable without exposing upstream de
       assert.ok(!data.error.includes("private upstream"));
     },
   ));
+
+test("JSON-capable model requests require a compatible provider without increasing the token cap", () => {
+  let captured;
+  return run(
+    {
+      env,
+      fetchImpl: async (url, options) => {
+        if (url.endsWith("/models"))
+          return new Response(
+            JSON.stringify({
+              data: [
+                {
+                  ...catalog.data[0],
+                  supported_parameters: ["response_format"],
+                },
+              ],
+            }),
+          );
+        captured = JSON.parse(options.body);
+        return mockFetch()(url);
+      },
+    },
+    async (base) => {
+      const response = await post(base, input, {
+        "x-ai-access-code": env.AI_ACCESS_CODE,
+      });
+      assert.equal(response.status, 200);
+      assert.deepEqual(captured.response_format, { type: "json_object" });
+      assert.deepEqual(captured.provider, { require_parameters: true });
+      assert.equal(captured.max_tokens, 2200);
+    },
+  );
+});
+
+for (const [code, choice] of [
+  ["output_limit", { finish_reason: "length", message: { content: null } }],
+  ["empty_output", { finish_reason: "stop", message: { content: "" } }],
+  [
+    "invalid_json",
+    {
+      finish_reason: "stop",
+      message: { content: "PRIVATE MALFORMED PROVIDER TEXT" },
+    },
+  ],
+])
+  test(`provider ${code} is diagnosed without disclosing upstream text`, () =>
+    run(
+      {
+        env,
+        fetchImpl: async (url) =>
+          url.endsWith("/models")
+            ? mockFetch()(url)
+            : new Response(JSON.stringify({ choices: [choice] })),
+      },
+      async (base) => {
+        const response = await post(base, input, {
+          "x-ai-access-code": env.AI_ACCESS_CODE,
+        });
+        const data = await response.json();
+        assert.equal(response.status, 502);
+        assert.equal(data.code, code);
+        assert.match(data.error, /not changed/);
+        assert.doesNotMatch(
+          JSON.stringify(data),
+          /PRIVATE|test-server-only-secret/,
+        );
+      },
+    ),
+  );

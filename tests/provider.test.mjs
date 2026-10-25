@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readJson, createModelCatalog } from "../server/provider.ts";
+import {
+  readJson,
+  createModelCatalog,
+  completionParameters,
+} from "../server/provider.ts";
 test("stream decoding preserves split Unicode characters", async () => {
   const bytes = new TextEncoder().encode(JSON.stringify({ name: "తెలుగు" }));
   let position = 0;
@@ -36,4 +40,9 @@ test("invalid model catalog response uses a bounded fallback", async () => {
     const models = createModelCatalog(async () => response);
     assert.equal((await models()).source, "fallback");
   }
+});
+
+test("models with no declared JSON capability retain compatible prompt-only requests", () => {
+  assert.deepEqual(completionParameters({ supportsJson: false }), {});
+  assert.deepEqual(completionParameters({}), {});
 });
