@@ -36,7 +36,7 @@ The original analysis and implementation order were written before changes in [I
 5. Real multi-tab workflow: a first-tab draft remained exportable after a second tab saved. Loading the newest workspace retained the second tab's change. The downloaded backup independently contained the first draft and its correct time.
 6. Re-run all checks after the fixes, deploy, verify public health/UI/runtime logs, then document actual provider acceptance separately.
 
-Latest complete local run: **89 Node tests + 20 component/axe tests = 109 passing tests**, with lint, strict types, production build, asset budgets, formatting and full dependency audit passing. The dependency audit reported **zero known vulnerabilities** at this check.
+Latest verified production-environment CI and Render runs: **89 Node tests + 20 component/axe tests = 109 passing tests**, with lint, strict types, production build, asset budgets, formatting and full dependency audit passing. The dependency audit reported **zero known vulnerabilities** at this check.
 
 The latest core coverage report (server, domain, planning, repository and legacy storage utilities) was **97.43% lines, 92.51% branches, 90.29% functions**. The component coverage gate measures EventForm, Guide, DownloadLink and the typed client; it is not presented as coverage of every UI line. All nine views have structural axe tests. Core minimums are 85% lines/functions and 75% branches. Component minimums are 80% lines/statements/functions and 70% branches. Coverage is bounded evidence, not a competition score.
 
@@ -86,3 +86,21 @@ The review led to two further improvements: use native JSON response mode only w
 The public browser verified the new Event guide and saved a 15:30 agenda entry, which remained correct after reload. Observed console errors were from the browser extension; none of the observed entries originated in the app. Live /.env, /server/app.ts and /api/not-a-route each returned 404. The HTML response carried CSP, HSTS, no-referrer, nosniff and no-cache headers.
 
 The final provider-fix commit is checked remotely by the same formatting, production-environment build, asset, 109-test, coverage and dependency-audit gates. Its final CI/deployment outcome is recorded after completion. Live generation after that fix remains unverified until an authenticated completion can be observed; readiness alone is not counted as generation success.
+
+## Final verified deployment and CI
+
+- Application commit: 8f382516c735843eff4b0738c150f2dc83501237.
+- Render deployment: dep-dbf4ovk9v7es73d35m90, live at 2026-10-25T18:38:55Z. Render passed all 89 Node tests and 20 component tests before publishing. Post-deploy logs reported the service live with no application errors in the observed window.
+- Final code/test commit on main: 1e95a3eaf11234e178f1a612c28c12abdab5159d. Later commits only improve CI diagnostics, test formatting and documentation; production application sources match the live application commit.
+- GitHub CI: https://github.com/hackerncet/gatherly/actions/runs/40222323647 — SUCCESS. Formatting, lint, strict types, production build, asset budgets, all 109 tests, both coverage gates and dependency audit passed.
+- Dependency audit: zero known vulnerabilities, including development dependencies.
+- Core coverage: 97.43% lines, 92.51% branches, 90.29% functions. Scoped UI coverage: 93.05% lines, 92.30% statements, 78.94% branches, 88.88% functions.
+- Initial JavaScript: 369,388 bytes / 114,483 bytes gzip. CSS: 59,034 bytes / 12,580 bytes gzip.
+- AI access is protected by the private AI_ACCESS_CODE saved in the owner's Render environment. It is never committed or included in this report. The owner can retrieve it securely in Render for authorized Studio use.
+- Remaining acceptance: an observed successful real-provider completion after the JSON-mode fix, and a fresh external PromptWars evaluation. The execution/browser environment became unavailable, so those results are not invented.
+
+## Assessment against the six criteria
+
+Code quality now has checked server/domain contracts, schema-derived types, focused modules, lint and CI. Security retains strict provider/data boundaries and adds consent enforcement, streaming size caps, atomic import handling and redacted diagnostics. Efficiency retains code splitting, bounded concurrency, catalog deduplication and measured asset limits. Testing grew from 54 to 109 meaningful checks with separate coverage gates. Accessibility includes nine-view structural axe coverage, keyboard/focus recovery and 27 responsive/contrast observations. Problem alignment now includes relevant preference-specific suggestions, vendor selection guidance, day-of schedules, risk insights, provenance and portable planning exports.
+
+These are reviewable improvements. They do not substitute for the external evaluator's score, successful live-provider acceptance, a penetration test or full assistive-technology certification.

@@ -4,53 +4,47 @@
 
 “Create a GenAI-powered planning assistant that helps users organize weddings, birthdays, and community events with budgets, timelines, vendor checklists, and personalized ideas.”
 
-The repository implements this as a responsive personal planning application with a same-origin AI API. The owner intentionally requested dummy API credentials; live AI activates after a real server-side OpenRouter key and a private access code are configured. Starter mode is clearly identified and works immediately.
+Gatherly implements this as a responsive personal planning application with a same-origin AI API. It provides a clearly identified starter mode and live OpenRouter generation protected by server credentials, a private access code and explicit consent. Live configuration is enabled; successful real-provider generation after the latest fix remains unverified.
 
-Latest findings, implementation loop and measured evidence: [IMPROVEMENT_AUDIT.md](IMPROVEMENT_AUDIT.md). Earlier baseline: [LIVE_AI_AUDIT_2026-10-25.md](LIVE_AI_AUDIT_2026-10-25.md).
+Findings, implementation loop, measured evidence and remaining limits: [IMPROVEMENT_AUDIT.md](IMPROVEMENT_AUDIT.md). The original analysis is preserved in [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md). Earlier baseline: [LIVE_AI_AUDIT_2026-10-25.md](LIVE_AI_AUDIT_2026-10-25.md).
 
 ## The six requested parameters
 
-| Parameter                   | Reviewable implementation                                                                                                                                                                                                                                                                          | Verification                                                                                                                                    |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Code Quality                | Focused React/TypeScript views, strict compiler options, pure domain functions, shared Zod schemas, bounded/versioned persistence, consistent formatting, documented architecture and CI                                                                                                           | `npm run build`, `npm run format:check`, source review                                                                                          |
-| Efficiency                  | Secondary-view code splitting, one shared origin, immutable fingerprinted assets, revalidated HTML, no external UI assets, cached/deduplicated model catalog, bounded requests and provider concurrency                                                                                            | Production build size gate; cache-header, catalog-deduplication and concurrency tests                                                           |
-| Accessibility               | Labeled form controls and tables, keyboard focus indicators, native modal dialogs and Escape, first-field focus, skip link, textual statuses, reduced motion and responsive layouts                                                                                                                | Browser keyboard/form/contrast checks; 24 responsive-frame checks; further assistive-technology verification is listed separately in QUALITY.md |
-| Security                    | Server-only OpenRouter key, constant-time private access-code comparison, owner-configured key/code required, request limits, 45-second provider timeout, consent and minimal brief fields, React text rendering, schema-checked output, strict CSP, versioned import and CSV injection protection | Negative HTTP tests; over-budget/malformed response tests; body limits; auth, origin, rate and daily/concurrency-cap checks; dependency audit   |
-| Testing                     | 109 domain, storage, concurrency, HTTP, component and axe tests, production build, formatting, dependency audit, browser workflow and deployment smoke checks                                                                                                                                                        | `npm run check`, `npm run format:check`, `npm audit --audit-level=moderate`, QUALITY.md                                                         |
-| Problem Statement Alignment | Three event types, category budgets and actual payments, editable task timelines, vendor quote/booking checklists, guest RSVPs, idea boards, OpenRouter model search, personalized generation preview and safe creation of a new event                                                             | Follow the demonstration below; all three starter event schemas and exact allocations are tested                                                |
+| Parameter | Reviewable implementation | Verification |
+| --- | --- | --- |
+| Code Quality | Strict TypeScript across frontend/domain/API, schema-derived contracts, focused provider/client/repository modules, atomic revision checks, lint and formatting | Production-environment CI; strict type check; stale-write and migration tests |
+| Efficiency | Lazy secondary views, cached/deduplicated catalog, immutable fingerprinted assets, revalidated HTML, bounded requests and provider concurrency | Initial JS 114,483 bytes gzip; CSS 12,580 bytes gzip; enforced size gates and cache/concurrency tests |
+| Accessibility | Native dialogs, keyboard focus/trapping/restoration, skip link, labeled controls, valid landmarks, visible statuses and reduced motion | Structural axe tests across nine views and the full shell; 27 responsive/visible-text contrast checks; physical assistive-technology certification not claimed |
+| Security | Server-only provider key, constant-time private-code comparison, server-validated consent, minimal brief disclosure, streaming byte caps, exact-budget validation, CSP, validated imports and CSV injection protection | Negative HTTP/privacy/consent/origin/rate-limit tests; zero known dependency vulnerabilities at the recorded audit |
+| Testing | 89 Node tests and 20 UI/axe tests; separate enforced core and scoped UI coverage gates | 109 tests pass in GitHub production-environment CI and the Render build; details in the audit |
+| Problem Statement Alignment | Three event types, planned/paid budgets, editable timelines, vendor checklists, RSVPs, personalized ideas, model selection, preview, provenance and an event-day guide | Three-event starter/schema checks, preference regressions, UI workflows, agenda persistence, calendar/brief payload tests |
 
 ## Five-minute demonstration
 
-1. Open the app. Switch between the wedding, birthday and community samples to see the different starter plans.
-2. Create a new event with your own date, city, guest count, budget, currency and preferences.
-3. Open Budget, edit a category and record a payment. Check the remaining amount and export CSV.
-4. Open Timeline, add/edit a task and complete it. Update the event date and review the option to move unfinished deadlines.
-5. Add a real vendor, record a quote and work through the four booking checks. No real booking is made by the application.
-6. Add a household to Guest list, set its party size and RSVP, and add dietary/access notes only with permission.
+1. Open the app. Switch between wedding, birthday and community samples.
+2. Create an event with a date, city, guest count, budget, currency and preferences.
+3. Open Budget, edit a category and record a payment. Check the remaining amount and CSV export.
+4. Open Timeline, add or edit a task and complete it. Change the event date and review deadline rescheduling.
+5. Add a vendor, record a quote and work through the four booking checks. The app does not book vendors.
+6. Add a household to Guest list and set party size and RSVP. Record personal notes only with permission.
 7. Save an inspiration idea or add your own.
-8. Open AI Studio. Search the live text-model catalog, filter free models and review a starter plan. After configuring real credentials, consent to share the event brief and generate a live plan. Review it before creating a separate new event.
-9. Open Event guide, add a timed moment and responsible team, export the calendar and event brief, and review planning risks.
-10. Export a complete workspace backup in Settings, reload the page and verify persistence. Imports require an explicit replacement action.
+8. Open AI Studio, search the text-model catalog, filter free models and preview a starter plan. For live generation, use the private access code from the owner's Render AI_ACCESS_CODE setting and consent to sharing the event brief. Review the response before creating a separate event. Provider output may be rejected or time out; these errors preserve the existing event.
+9. Open Event guide, add a timed moment and responsible team, inspect planning risks, and use calendar/brief export.
+10. Export a workspace backup, reload and check persistence. A competing tab's revision cannot silently overwrite your edits; the conflict flow preserves recovery/export options.
 
 ## AI behavior and data boundary
 
-- A single selected text-capable OpenRouter model handles each generation. The app does not call every model in parallel or promise compatibility with image/audio-only endpoints.
-- The live catalog determines current model availability and reports a limited fallback if unavailable.
-- Only the event brief and planning request are submitted. Guest lists, vendor contacts, actual payments and the private access code are not part of the model prompt.
-- The output must be structured, bounded JSON. A plan that exceeds the budget or fails validation is rejected, preserving the current event.
-- Budget figures are estimates, and any vendor availability or local requirements need human confirmation.
+- A single selected text-capable OpenRouter model handles each request. The app does not call every model in parallel or promise every provider endpoint will work.
+- The live catalog determines current availability. JSON mode and compatible-provider routing are requested when advertised; other models retain prompt-based structured output.
+- Only the event brief and planning request reach the provider. Guest lists, vendor contacts, actual payments and private access codes are excluded from the model prompt.
+- Output must pass bounded schema validation, exact budget allocation and a contingency check. Invalid, empty or truncated output is rejected with a safe explanation.
+- There are no automatic paid retries or hidden model substitutions. Token/time, hourly, daily and concurrency limits remain in place.
+- Budget figures are estimates. Prices, availability and local requirements need organizer verification.
 
 ## Scoring boundary
 
-No official PromptWars scoring rubric or scorer was supplied. This document maps each requested parameter to concrete implementation and evidence; it does not invent a 100% result. “All automated checks pass” applies to the checks actually run. It is not a guarantee of zero defects, full WCAG certification, penetration-test certification or an organizer-assigned competition score.
+No private PromptWars rubric, deduction annotations or fresh external result were supplied. This document maps the requested parameters to observable implementation and evidence; it does not invent a 98/100 or 100/100 result.
 
-The current product is browser-local. It does not claim cloud sync, authenticated collaboration, actual vendor booking, automated messaging or payment processing. Those are outside the supplied problem statement and should not be presented as implemented features.
+The audit records the failed initial real-provider run and the missing post-fix acceptance result. Calendar/Markdown payload and link tests pass, but the cloud browser did not confirm download completion for those file types. These are not counted as successful end-to-end acceptance tests.
 
-## Published submission
-
-- Application: https://gatherly-qx5g.onrender.com
-- Source and CI: https://github.com/hackerncet/gatherly
-- Evidence and verification limits: [QUALITY.md](QUALITY.md)
-- Secret setup and operating limits: [SECURITY.md](SECURITY.md)
-
-The deployed app deliberately starts in starter mode until the owner configures the real API key and private access code. This is the dummy-key behavior requested in the brief.
+The app stores plans locally in the browser. It does not claim cloud collaboration, account authentication, actual vendor booking, automated messaging, payment processing, full WCAG certification, independent penetration testing or large-scale load-test certification.
