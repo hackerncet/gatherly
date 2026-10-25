@@ -26,6 +26,7 @@ export const catalogSchema = z.object({
         inputPrice: z.string().max(100),
         outputPrice: z.string().max(100),
         supportsJson: z.boolean().optional(),
+        supportsSchema: z.boolean().optional(),
         reasoningMode: z.enum(["off", "low"]).optional(),
       }),
     )

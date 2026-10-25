@@ -22,7 +22,8 @@ import {
 const requestSchema = z.object({
   brief: briefSchema,
   consent: z.boolean().default(false),
-  model: z.string().regex(/^[a-zA-Z0-9_./:@+-]{1,160}$/),
+  // The catalog is the allowlist. IDs are JSON data, never URL fragments.
+  model: z.string().trim().min(1).max(160),
   prompt: z.string().trim().max(1600).default(""),
 });
 interface AppOptions {
@@ -238,7 +239,7 @@ export function createApp({
             : starterPlan(brief).vendors,
         },
         notice:
-          "AI suggestions are estimates. Review details and confirm prices and availability directly.",
+          "AI category priorities are allocated to your exact total with a 10% contingency reserve. Review estimates, prices and availability directly.",
       });
     } catch (error) {
       if (error instanceof PlanResponseError)

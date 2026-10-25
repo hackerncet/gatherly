@@ -2,7 +2,13 @@ import { useState } from "react";
 import App from "../../src/App";
 import { IDBFactory } from "fake-indexeddb";
 import { describe, test, expect, vi } from "vitest";
-import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import {
+  render,
+  screen,
+  waitFor,
+  fireEvent,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import axe from "axe-core";
 import { EventForm } from "../../src/components/EventForm";
@@ -456,6 +462,7 @@ test("authenticated AI preview preserves model provenance and creates a separate
   );
   expect(await screen.findByText("GENERATED WITH AI")).toBeVisible();
   expect(screen.getByText("Model: provider/actual-model")).toBeVisible();
+  expect(screen.getByText(/10% contingency rounded up/)).toBeVisible();
   expect(
     screen.getByRole("heading", { name: "Your vendor selection checklist" }),
   ).toBeVisible();
@@ -524,4 +531,43 @@ test("AI provider failure is shown without changing the original event", async (
     "The AI provider needs credits.",
   );
   expect(create).not.toHaveBeenCalled();
+});
+
+test("variable-price routes never display negative dollar prices in the model picker", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          source: "live",
+          models: [
+            {
+              id: "variable/router",
+              name: "Variable router",
+              free: false,
+              contextLength: 0,
+              inputPrice: "-1",
+              outputPrice: "-1",
+            },
+          ],
+        }),
+      ),
+    ),
+  );
+  render(
+    <Studio
+      event={makeEvent()}
+      aiEnabled={false}
+      serviceMessage="Starter mode"
+      refreshStatus={vi.fn()}
+      onCreate={vi.fn()}
+      notify={notify}
+    />,
+  );
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Your AI model" }));
+  const picker = within(await screen.findByRole("dialog"));
+  expect(await picker.findByText("Variable router")).toBeVisible();
+  expect(picker.getByText("Pricing unavailable")).toBeVisible();
+  expect(screen.queryByText(/-1000000/)).not.toBeInTheDocument();
 });

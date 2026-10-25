@@ -13,10 +13,10 @@ Findings, implementation loop, measured evidence and remaining limits: [IMPROVEM
 | Parameter | Reviewable implementation | Verification |
 | --- | --- | --- |
 | Code Quality | Strict TypeScript across frontend/domain/API, schema-derived contracts, focused provider/client/repository modules, atomic revision checks, lint and formatting | Production-environment CI; strict type check; stale-write and migration tests |
-| Efficiency | Lazy secondary views, cached/deduplicated catalog, immutable fingerprinted assets, revalidated HTML, bounded requests and provider concurrency | Initial JS 114,500 bytes gzip; CSS 12,580 bytes gzip; enforced size gates and cache/concurrency tests |
+| Efficiency | Lazy secondary views, cached/deduplicated catalog, immutable fingerprinted assets, revalidated HTML, bounded requests and provider concurrency | Initial JS 114,519 bytes gzip; CSS 12,580 bytes gzip; enforced size gates and cache/concurrency tests |
 | Accessibility | Native dialogs, keyboard focus/trapping/restoration, skip link, labeled controls, valid landmarks, visible statuses and reduced motion | Structural axe tests across nine views and the full shell; 27 responsive/visible-text contrast checks; physical assistive-technology certification not claimed |
 | Security | Server-only provider key, constant-time private-code comparison, server-validated consent, minimal brief disclosure, streaming byte caps, exact-budget validation, CSP, validated imports and CSV injection protection | Negative HTTP/privacy/consent/origin/rate-limit tests; zero known dependency vulnerabilities at the recorded audit |
-| Testing | 94 Node tests and 20 UI/axe tests; separate enforced core and scoped UI coverage gates | 114 tests run in production-environment CI and the Render build; latest verified outcomes are recorded in the audit; details in the audit |
+| Testing | 105 Node tests and 21 UI/axe tests; separate enforced core and scoped UI coverage gates | 126 tests run in production-environment CI and the Render build; latest verified outcomes are recorded in the audit |
 | Problem Statement Alignment | Three event types, planned/paid budgets, editable timelines, vendor checklists, RSVPs, personalized ideas, model selection, preview, provenance and an event-day guide | Three-event starter/schema checks, preference regressions, UI workflows, agenda persistence, calendar/brief payload tests |
 
 ## Five-minute demonstration
@@ -35,9 +35,9 @@ Findings, implementation loop, measured evidence and remaining limits: [IMPROVEM
 ## AI behavior and data boundary
 
 - A single selected text-capable OpenRouter model handles each request. The app does not call every model in parallel or promise every provider endpoint will work.
-- The live catalog determines current availability. JSON mode and compatible-provider routing are requested when advertised; other models retain prompt-based structured output.
+- The live catalog determines current availability. Native JSON Schema and compatible-provider routing are requested when advertised, then JSON mode where available; other models retain validated prompt-based structured output.
 - Only the event brief and planning request reach the provider. Guest lists, vendor contacts, actual payments and private access codes are excluded from the model prompt.
-- Output must pass bounded schema validation, exact budget allocation and a contingency check. Invalid, empty or truncated output is rejected with a safe explanation.
+- Output must pass bounded schema validation. AI suggests relative category priorities; application code reserves 10% for contingency and calculates exact currency amounts with deterministic rounding. Invalid, empty or truncated output is rejected with a safe explanation.
 - There are no automatic paid retries or hidden model substitutions. Token/time, hourly, daily and concurrency limits remain in place.
 - Budget figures are estimates. Prices, availability and local requirements need organizer verification.
 

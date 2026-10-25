@@ -15,6 +15,7 @@ import { Botanical, Modal, PageHeading } from "../components/ui";
 import { aiPlanSchema, eventFromPlan, starterPlan } from "../lib/domain.ts";
 import { apiJson, catalogSchema, planResponseSchema } from "../lib/api.ts";
 import { money } from "../lib/storage";
+import { hasKnownPricing } from "../lib/models";
 import type { Brief, Event, Model, Plan } from "../lib/types";
 function initialPrompt() {
   try {
@@ -403,6 +404,12 @@ export function Studio({
               )}
               <p className="plan-summary">{preview.plan.summary}</p>
               <h3>Your budget, thoughtfully divided</h3>
+              {preview.source === "ai" && (
+                <p className="field-note">
+                  Category priorities are allocated to your total, with a 10%
+                  contingency rounded up to a whole currency unit.
+                </p>
+              )}
               <div className="plan-budget">
                 {preview.plan.budgets.map((b, i) => (
                   <div key={i}>
@@ -550,20 +557,18 @@ export function Studio({
                   <span>
                     <strong>{m.name}</strong>
                     <small>{m.id}</small>
-                    {!m.free &&
-                      Number.isFinite(Number(m.inputPrice)) &&
-                      Number.isFinite(Number(m.outputPrice)) && (
-                        <small>
-                          ${(Number(m.inputPrice) * 1000000).toFixed(2)} input /
-                          ${(Number(m.outputPrice) * 1000000).toFixed(2)} output
-                          per 1M tokens
-                        </small>
-                      )}
+                    {!m.free && hasKnownPricing(m) && (
+                      <small>
+                        ${(Number(m.inputPrice) * 1000000).toFixed(2)} input / $
+                        {(Number(m.outputPrice) * 1000000).toFixed(2)} output
+                        per 1M tokens
+                      </small>
+                    )}
                   </span>
                   <span className="pill">
                     {m.free
                       ? "Free"
-                      : Number.isFinite(Number(m.inputPrice))
+                      : hasKnownPricing(m)
                         ? "Paid"
                         : "Pricing unavailable"}
                   </span>

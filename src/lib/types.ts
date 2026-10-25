@@ -22,6 +22,7 @@ export interface Model {
   inputPrice: string;
   outputPrice: string;
   supportsJson?: boolean;
+  supportsSchema?: boolean;
   reasoningMode?: "off" | "low";
 }
 export type Page =

@@ -59,8 +59,18 @@ const post = (base, body = input, headers = {}) =>
     headers: { "Content-Type": "application/json", ...headers },
     body: JSON.stringify(body),
   });
+const providerPlan = () => ({
+  ...starterPlan(brief),
+  tasks: starterPlan(brief).tasks.slice(0, 8),
+  ideas: starterPlan(brief).ideas.slice(0, 3),
+  budgets: [
+    { category: "Venue & activities", weight: 55 },
+    { category: "Food & refreshments", weight: 35 },
+    { category: "Supplies", weight: 10 },
+  ],
+});
 const mockFetch =
-  (reply = starterPlan(brief)) =>
+  (reply = providerPlan()) =>
   async (url) =>
     new Response(
       JSON.stringify(
@@ -70,6 +80,49 @@ const mockFetch =
       ),
       { status: 200, headers: { "Content-Type": "application/json" } },
     );
+
+test("native structured-output routes receive the same bounded provider contract enforced on return", () => {
+  let captured;
+  return run(
+    {
+      env,
+      fetchImpl: async (url, options) => {
+        if (url.endsWith("/models"))
+          return new Response(
+            JSON.stringify({
+              data: [
+                {
+                  ...catalog.data[0],
+                  supported_parameters: [
+                    "structured_outputs",
+                    "response_format",
+                  ],
+                },
+              ],
+            }),
+          );
+        captured = JSON.parse(options.body);
+        return mockFetch()(url);
+      },
+    },
+    async (base) => {
+      const response = await post(base, input, {
+        "x-ai-access-code": env.AI_ACCESS_CODE,
+      });
+      assert.equal(response.status, 200);
+      const format = captured.response_format;
+      assert.equal(format.type, "json_schema");
+      assert.equal(format.json_schema.strict, true);
+      assert.equal(format.json_schema.schema.additionalProperties, false);
+      assert.ok(format.json_schema.schema.required.includes("vendors"));
+      const category = format.json_schema.schema.properties.budgets.items;
+      assert.equal(category.additionalProperties, false);
+      assert.equal(category.properties.weight.maximum, 100);
+      assert.equal(category.properties.amount, undefined);
+      assert.equal(captured.max_tokens, 2200);
+    },
+  );
+});
 
 for (const [metadata, control] of [
   [{ mandatory: false }, { enabled: false }],
@@ -305,7 +358,7 @@ test("only the brief and prompt reach the provider; secrets are server-only", ()
     },
   );
 });
-test("rejects AI plans that exceed the event budget", () => {
+test("rejects provider currency amounts instead of trusting them as allocation weights", () => {
   const plan = starterPlan(brief);
   plan.budgets[0].amount = brief.budget + 1;
   return run({ env, fetchImpl: mockFetch(plan) }, async (base) => {
@@ -452,7 +505,7 @@ test("daily provider attempt cap cannot be exceeded", () =>
     );
   }));
 test("fenced JSON is accepted while executable-looking text stays inert data", () => {
-  const plan = starterPlan(brief);
+  const plan = providerPlan();
   plan.ideas[0].title = "<script>alert(1)</script>";
   return run(
     {
@@ -524,22 +577,26 @@ test("maximum valid brief produces a contract-valid starter response", () =>
     assert.equal(response.status, 200);
     assert.ok(aiPlanSchema.safeParse((await response.json()).plan).success);
   }));
-for (const type of ["unallocated", "no contingency"])
-  test(`AI plans with ${type} fail validation`, () => {
-    const plan = starterPlan(brief);
-    if (type === "unallocated") plan.budgets[0].amount--;
-    else
-      plan.budgets = plan.budgets.map((b) => ({
-        ...b,
-        category: b.category === "Contingency" ? "Extra decor" : b.category,
-      }));
-    return run({ env, fetchImpl: mockFetch(plan) }, async (base) => {
-      const response = await post(base, input, {
-        "x-ai-access-code": env.AI_ACCESS_CODE,
-      });
-      assert.equal(response.status, 502);
-    });
-  });
+for (const [label, budgets, code] of [
+  ["zero weights", [{ category: "Food", weight: 0 }], "invalid_plan"],
+  [
+    "only reserve categories",
+    [{ category: "Contingency", weight: 10 }],
+    "invalid_budget",
+  ],
+])
+  test(`AI plans with ${label} fail validation`, () =>
+    run(
+      { env, fetchImpl: mockFetch({ ...providerPlan(), budgets }) },
+      async (base) => {
+        const response = await post(base, input, {
+          "x-ai-access-code": env.AI_ACCESS_CODE,
+        });
+        assert.equal(response.status, 502);
+        assert.equal((await response.json()).code, code);
+      },
+    ));
+
 test("actual provider model identity and vendor requirements are returned", () =>
   run(
     {
@@ -551,7 +608,7 @@ test("actual provider model identity and vendor requirements are returned", () =
               JSON.stringify({
                 model: "provider/actual-model",
                 choices: [
-                  { message: { content: JSON.stringify(starterPlan(brief)) } },
+                  { message: { content: JSON.stringify(providerPlan()) } },
                 ],
               }),
             ),
@@ -717,3 +774,92 @@ for (const [code, choice] of [
         );
       },
     ));
+
+test("provider weights become exact whole currency allocations with a disclosed reserve", () =>
+  run(
+    {
+      env,
+      fetchImpl: mockFetch({
+        ...providerPlan(),
+        budgets: [
+          { category: "Food", weight: 1 },
+          { category: "Venue", weight: 1 },
+          { category: "Activities", weight: 1 },
+        ],
+      }),
+    },
+    async (base) => {
+      const response = await post(
+        base,
+        { ...input, brief: { ...brief, budget: 60002 } },
+        { "x-ai-access-code": env.AI_ACCESS_CODE },
+      );
+      assert.equal(response.status, 200);
+      const data = await response.json();
+      assert.deepEqual(data.plan.budgets, [
+        { category: "Food", amount: 18001 },
+        { category: "Venue", amount: 18000 },
+        { category: "Activities", amount: 18000 },
+        { category: "Contingency", amount: 6001 },
+      ]);
+      assert.match(data.notice, /10% contingency/);
+      assert.equal(data.source, "ai");
+    },
+  ));
+
+test("catalog-listed model aliases route as JSON data and unlisted aliases stay blocked", () => {
+  const alias = "~openai/gpt-luna-latest";
+  let completion;
+  return run(
+    {
+      env,
+      fetchImpl: async (url, options) => {
+        if (url.endsWith("/models"))
+          return new Response(
+            JSON.stringify({ data: [{ ...catalog.data[0], id: alias }] }),
+          );
+        completion = { url, model: JSON.parse(options.body).model };
+        return mockFetch()(url);
+      },
+    },
+    async (base) => {
+      const headers = { "x-ai-access-code": env.AI_ACCESS_CODE };
+      const response = await post(base, { ...input, model: alias }, headers);
+      assert.equal(response.status, 200);
+      assert.deepEqual(completion, {
+        url: "https://openrouter.ai/api/v1/chat/completions",
+        model: alias,
+      });
+      assert.equal(
+        (await post(base, { ...input, model: "~unlisted/model" }, headers))
+          .status,
+        400,
+      );
+    },
+  );
+});
+
+test("variable router prices are unavailable estimates rather than negative dollar rates", () =>
+  run(
+    {
+      env,
+      fetchImpl: async () =>
+        new Response(
+          JSON.stringify({
+            data: [
+              {
+                ...catalog.data[0],
+                pricing: { prompt: "-1", completion: "-1" },
+              },
+            ],
+          }),
+        ),
+    },
+    async (base) => {
+      const data = await (await fetch(`${base}/api/models`)).json();
+      const model = data.models.find((m) => m.id === "test/model");
+      assert.equal(model.inputPrice, "unknown");
+      assert.equal(model.outputPrice, "unknown");
+      assert.equal(model.free, false);
+    },
+  ));

@@ -59,7 +59,7 @@ node --env-file=.env server/index.ts
 
 Build first when using that production command. The event brief and additional request are sent to OpenRouter after consent. Guest lists, vendor contacts, payment records and access codes are not included in the model prompt.
 
-The app supports all **text-capable chat models** exposed by the current OpenRouter `/models` catalog. Image/audio-only models do not produce this app's text plans. Each request uses one selected model; it does not call every provider. Availability, supported features and prices can change. The catalog is cached for one hour; a labeled limited fallback is offered on network failure. The model is instructed to output JSON; output is schema-validated, and malformed plans, missing contingency or allocations that do not exactly match the brief budget are rejected. A failed generation leaves the saved event intact.
+The app supports all **text-capable chat models** exposed by the current OpenRouter `/models` catalog. Image/audio-only models do not produce this app's text plans. Each request uses one selected model; it does not call every provider. Availability, supported features and prices can change. The catalog is cached for one hour; a labeled limited fallback is offered on network failure. Models suggest bounded relative category weights. Application code reserves 10% for contingency (rounded up to a whole currency unit) and allocates the remainder exactly with deterministic rounding; model-generated currency amounts are never trusted. Native JSON Schema is requested when advertised, JSON mode when available, and validated prompt-based JSON otherwise. Malformed or unusable plans are rejected. Variable prices are labeled unavailable, and catalog-listed model aliases are accepted. A failed generation leaves the saved event intact.
 
 ## Deploy on Render
 
@@ -85,7 +85,7 @@ npm run format:check
 npm audit --audit-level=moderate
 ```
 
-`npm run check` performs ESLint (including hooks/accessibility checks), strict TypeScript checking across frontend/shared/server code, a Vite production build, asset-size budgets, Node integration tests and Vitest component/axe tests with coverage gates. See [IMPROVEMENT_AUDIT.md](IMPROVEMENT_AUDIT.md) for the latest findings and fix loop, [QUALITY.md](QUALITY.md) for evidence and limits and [EVALUATION.md](EVALUATION.md) for the six-criterion evaluation guide. Backend provider responses are mocked in tests; a live paid model call is not made without a real key.
+`npm run check` performs ESLint (including hooks/accessibility checks), strict TypeScript checking across frontend/shared/server code, a Vite production build, asset-size budgets, Node integration tests and Vitest component/axe tests with coverage gates. See [IMPROVEMENT_AUDIT.md](IMPROVEMENT_AUDIT.md) for the latest findings and fix loop, [QUALITY.md](QUALITY.md) for evidence and limits and [EVALUATION.md](EVALUATION.md) for the six-criterion evaluation guide. Automated tests use mocked provider responses. Separate real-provider acceptance results and their limits are recorded in the audit.
 
 ## Structure
 
