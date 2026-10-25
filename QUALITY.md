@@ -2,6 +2,8 @@
 
 Checked on 25 October 2026. This report records tested behavior, not a claim of perfection or certification.
 
+For the latest readiness check and newly reproduced findings, see [LIVE_AI_AUDIT_2026-10-25.md](LIVE_AI_AUDIT_2026-10-25.md). Live AI remains disabled in that check, and a cross-tab lost-update issue is documented there.
+
 | Requested parameter | Implemented acceptance criteria                                                                                                                                             | Evidence                                                                       |
 | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | Code quality        | Strict TypeScript, separated domain/API/UI layers, versioned data schemas, consistent formatting, documented boundaries                                                     | `npm run build`; Prettier; focused source modules                              |
@@ -58,7 +60,7 @@ Accessibility review is not a full assistive-technology certification. Responsiv
 - GitHub Actions run `40192450378` passed the initial complete 54-test implementation. Further pushes run the same checks plus the new asset-size gate and full dependency audit.
 - Render runs the app on its free Node web-service plan in Singapore and automatically deploys changes from `main`. The service uses Render’s default TCP readiness probe; `/api/health` was additionally verified over HTTPS.
 - HTTPS responses include the app’s same-origin CSP, HSTS and no-store API policy. Attempts to fetch `/.env` and `/server/app.mjs` returned 404.
-- The server contains only the requested dummy OpenRouter key and access code. Live completions remain disabled until the owner replaces both; the planning workspace and starter generation work immediately.
+- The initial deployment used the requested dummy key and access code. The owner has since reported updating the key; the latest audit still observed `aiEnabled: false`. Secret values were not inspected. See the live AI audit for the activation conditions and remaining blocker.
 
 ## Improvements in this review
 

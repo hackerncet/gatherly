@@ -6,6 +6,8 @@
 
 The repository implements this as a responsive personal planning application with a same-origin AI API. The owner intentionally requested dummy API credentials; live AI activates after a real server-side OpenRouter key and a private access code are configured. Starter mode is clearly identified and works immediately.
 
+Latest independent readiness results and findings: [LIVE_AI_AUDIT_2026-10-25.md](LIVE_AI_AUDIT_2026-10-25.md).
+
 ## The six requested parameters
 
 | Parameter                   | Reviewable implementation                                                                                                                                                                                                                                                                          | Verification                                                                                                                                    |
