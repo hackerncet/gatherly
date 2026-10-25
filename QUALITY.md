@@ -1,6 +1,6 @@
 # Quality and acceptance evidence
 
-**Latest improvement cycle:** [IMPROVEMENT_AUDIT.md](IMPROVEMENT_AUDIT.md). The historical results below describe the earlier deployed revision. The latest implementation replaces localStorage writes, adds full production TypeScript checking, 102 tests and component/axe/coverage gates.
+**Latest improvement cycle:** [IMPROVEMENT_AUDIT.md](IMPROVEMENT_AUDIT.md). The historical results below describe the earlier deployed revision. The latest implementation replaces localStorage writes, adds full production TypeScript checking, 104 tests and component/axe/coverage gates.
 
 Checked on 25 October 2026. This report records tested behavior, not a claim of perfection or certification.
 

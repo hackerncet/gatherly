@@ -17,8 +17,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src server",
     "test:unit": "node --test --experimental-test-coverage --test-coverage-include='src/lib/*.ts' --test-coverage-include='server/*.ts' --test-coverage-exclude='src/lib/use*.ts' --test-coverage-exclude='src/lib/api.ts' --test-coverage-exclude='server/index.ts' --test-coverage-exclude='server/dev.ts' --test-coverage-lines=85 --test-coverage-functions=85 --test-coverage-branches=75 tests/*.test.mjs",
-    "test:components": "vitest run --coverage",
-    "test:coverage": "vitest run --coverage"
+    "test:components": "node scripts/run-components.mjs",
+    "test:coverage": "node scripts/run-components.mjs"
   },
   "dependencies": {
     "express": "^5.1.0",

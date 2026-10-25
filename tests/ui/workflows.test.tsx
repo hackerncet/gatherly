@@ -17,7 +17,7 @@ import { Guests } from "../../src/pages/Guests";
 import { Inspiration } from "../../src/pages/Inspiration";
 import { SettingsPage } from "../../src/pages/Settings";
 import { Overview } from "../../src/pages/Overview";
-import { eventFromPlan } from "../../src/lib/domain.ts";
+import { eventFromPlan, starterPlan } from "../../src/lib/domain.ts";
 import { apiJson, healthSchema } from "../../src/lib/api.ts";
 
 const brief = {
@@ -401,4 +401,127 @@ test("migration keeps a differing older-tab workspace exportable instead of eras
   );
   expect(screen.getAllByText(brief.title).length).toBeGreaterThan(0);
   await repository.close();
+});
+
+test("authenticated AI preview preserves model provenance and creates a separate event", async () => {
+  const create = vi.fn();
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockImplementation(
+      async (url: string) =>
+        new Response(
+          JSON.stringify(
+            url.endsWith("/models")
+              ? {
+                  source: "live",
+                  models: [
+                    {
+                      id: "openrouter/free",
+                      name: "Free router",
+                      free: true,
+                      contextLength: 0,
+                      inputPrice: "0",
+                      outputPrice: "0",
+                    },
+                  ],
+                }
+              : {
+                  source: "ai",
+                  model: "provider/actual-model",
+                  plan: starterPlan(brief),
+                },
+          ),
+        ),
+    ),
+  );
+  const original = makeEvent();
+  render(
+    <Studio
+      event={original}
+      aiEnabled={true}
+      serviceMessage="Live AI is configured."
+      refreshStatus={vi.fn()}
+      onCreate={create}
+      notify={notify}
+    />,
+  );
+  const user = userEvent.setup();
+  await user.type(
+    screen.getByLabelText(/Private AI access code/),
+    "test-session-code-1234",
+  );
+  await user.click(screen.getByRole("checkbox", { name: /I agree to send/ }));
+  await user.click(
+    screen.getByRole("button", { name: "Generate my event plan" }),
+  );
+  expect(await screen.findByText("GENERATED WITH AI")).toBeVisible();
+  expect(screen.getByText("Model: provider/actual-model")).toBeVisible();
+  expect(
+    screen.getByRole("heading", { name: "Your vendor selection checklist" }),
+  ).toBeVisible();
+  await user.click(
+    screen.getByRole("button", { name: /Create a new event with this plan/ }),
+  );
+  expect(create).toHaveBeenCalledWith(
+    expect.objectContaining({
+      provenance: expect.objectContaining({
+        source: "ai",
+        model: "provider/actual-model",
+      }),
+    }),
+  );
+  expect(create.mock.calls[0][0].id).not.toBe(original.id);
+  expect(original.title).toBe(brief.title);
+});
+
+test("AI provider failure is shown without changing the original event", async () => {
+  const create = vi.fn();
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockImplementation(async (url: string) =>
+      url.endsWith("/models")
+        ? new Response(
+            JSON.stringify({
+              source: "fallback",
+              models: [
+                {
+                  id: "openrouter/free",
+                  name: "Free router",
+                  free: true,
+                  contextLength: 0,
+                  inputPrice: "0",
+                  outputPrice: "0",
+                },
+              ],
+            }),
+          )
+        : new Response(
+            JSON.stringify({ error: "The AI provider needs credits." }),
+            { status: 502 },
+          ),
+    ),
+  );
+  render(
+    <Studio
+      event={makeEvent()}
+      aiEnabled={true}
+      serviceMessage="Live AI is configured."
+      refreshStatus={vi.fn()}
+      onCreate={create}
+      notify={notify}
+    />,
+  );
+  const user = userEvent.setup();
+  await user.type(
+    screen.getByLabelText(/Private AI access code/),
+    "test-session-code-1234",
+  );
+  await user.click(screen.getByRole("checkbox", { name: /I agree to send/ }));
+  await user.click(
+    screen.getByRole("button", { name: "Generate my event plan" }),
+  );
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "The AI provider needs credits.",
+  );
+  expect(create).not.toHaveBeenCalled();
 });

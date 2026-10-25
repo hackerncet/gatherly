@@ -17,5 +17,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run format:check
-      - run: npm run check
+      - name: Verify with the production build environment
+        run: npm run check
+        env:
+          NODE_ENV: production
       - run: npm audit --audit-level=moderate

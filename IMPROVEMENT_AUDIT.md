@@ -36,7 +36,7 @@ The original analysis and implementation order were written before changes in [I
 5. Real multi-tab workflow: a first-tab draft remained exportable after a second tab saved. Loading the newest workspace retained the second tab's change. The downloaded backup independently contained the first draft and its correct time.
 6. Re-run all checks after the fixes, deploy, verify public health/UI/runtime logs, then document actual provider acceptance separately.
 
-Latest complete local run: **84 Node tests + 18 component/axe tests = 102 passing tests**, with lint, strict types, production build, asset budgets, formatting and full dependency audit passing. The dependency audit reported **zero known vulnerabilities** at this check.
+Latest complete local run: **84 Node tests + 20 component/axe tests = 104 passing tests**, with lint, strict types, production build, asset budgets, formatting and full dependency audit passing. The dependency audit reported **zero known vulnerabilities** at this check.
 
 The latest core coverage report (server, domain, planning, repository and legacy storage utilities) was **97.29% lines, 92.00% branches, 89.90% functions**. The component coverage gate measures EventForm, Guide, DownloadLink and the typed client; it is not presented as coverage of every UI line. All nine views have structural axe tests. Core minimums are 85% lines/functions and 75% branches. Component minimums are 80% lines/statements/functions and 70% branches. Coverage is bounded evidence, not a competition score.
 
@@ -56,6 +56,16 @@ Deployment verification for this revision is recorded below after it becomes liv
 - Migration now preserves and exposes a different older-format snapshot instead of deleting edits saved by a still-open older application. A regression test confirms the differing snapshot remains exportable and the current database is not replaced.
 - Provider authentication failures return an actionable, redacted owner message rather than a generic failure.
 - Calendar and event brief exports now use native download links with object-URL cleanup. Calendar bytes, escaping, Unicode line folding and link semantics pass tests. The cloud browser did not report calendar/Markdown download completion, so browser-level capture of those two file types remains unverified; this is not counted as a passed download test.
+
+## Responsive and AI UI acceptance
+
+All nine views passed checks at nominal 320, 390 and 768-pixel frame widths: **27 checks, zero document-level overflow and zero visible-text contrast failures** in the sampled viewports. These are browser frame/layout checks, not physical-device or full WCAG certification.
+
+Component tests also exercise an authenticated AI response preview, provider-reported model provenance, vendor guidance, creation of a separate event, and provider-error recovery without altering the original event. These UI responses are mocked; real-provider acceptance is recorded separately.
+
+## Production build parity correction
+
+The first Render build of 1.1 failed at the new component tests: Render's inherited NODE_ENV=production selected React's production bundle, which intentionally omits the test-only act API. The application build and Node tests had passed, and the previous deployment remained live. Component tests now run in a dedicated child process with NODE_ENV=test before React is loaded. The actual production build/runtime remain in production mode. GitHub CI now runs the complete check command with NODE_ENV=production to reproduce this deployment environment. The corrected production-environment check is verified before publishing the follow-up fix.
 
 ## Practical limits
 
