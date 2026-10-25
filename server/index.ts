@@ -1,4 +1,4 @@
-import { createApp } from "./app.mjs";
+import { createApp } from "./app.ts";
 const server = createApp().listen(
   Number(process.env.PORT) || 3000,
   "0.0.0.0",

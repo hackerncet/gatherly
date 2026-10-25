@@ -9,7 +9,7 @@ import {
   Download,
 } from "lucide-react";
 import { Confirm, Empty, Modal, PageHeading } from "../components/ui";
-import { escapeCsv, guestSchema, totals, uid } from "../lib/domain.mjs";
+import { escapeCsv, guestSchema, totals, uid } from "../lib/domain.ts";
 import { downloadFile } from "../lib/storage";
 import type { Event, Guest } from "../lib/types";
 export function Guests({
@@ -275,7 +275,7 @@ export function Guests({
                 <input
                   name="name"
                   required
-                  autoFocus
+
                   maxLength={100}
                   defaultValue={editing?.name}
                 />

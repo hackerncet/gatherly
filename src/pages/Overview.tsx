@@ -15,7 +15,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { Botanical, SectionTitle, TextLink } from "../components/ui";
-import { totals, today } from "../lib/domain.mjs";
+import { totals, today } from "../lib/domain.ts";
 import { dateLabel, daysUntil, money } from "../lib/storage";
 import type { Event, Page } from "../lib/types";
 export function Overview({
@@ -221,6 +221,7 @@ export function Overview({
               </div>
               <div
                 className="stacked-bar"
+                role="img"
                 aria-label={`Allocated ${money(t.allocated, event.currency)} of ${money(event.budget, event.currency)}`}
               >
                 {event.budgets.map((b, i) => (
@@ -269,7 +270,10 @@ export function Overview({
             </button>
           </section>
         </div>
-        <aside className="overview-rail">
+        <aside
+          className="overview-rail"
+          aria-label="Planning companion and progress"
+        >
           <section className="ai-card">
             <div className="ai-card-top">
               <span className="ai-orb">
@@ -297,7 +301,9 @@ export function Overview({
                   onClick={() => {
                     try {
                       sessionStorage.setItem("gatherly.prompt", s);
-                    } catch {}
+                    } catch {
+                      /* The prompt is optional when session storage is unavailable. */
+                    }
                     navigate("studio");
                   }}
                 >

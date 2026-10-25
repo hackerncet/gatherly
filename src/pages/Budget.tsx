@@ -8,7 +8,7 @@ import {
   CircleAlert,
 } from "lucide-react";
 import { Confirm, Empty, Modal, PageHeading } from "../components/ui";
-import { budgetSchema, escapeCsv, totals, uid } from "../lib/domain.mjs";
+import { budgetSchema, escapeCsv, totals, uid } from "../lib/domain.ts";
 import { downloadFile, money } from "../lib/storage";
 import type { Budget, Event } from "../lib/types";
 export function BudgetPage({
@@ -252,7 +252,7 @@ export function BudgetPage({
                   name="category"
                   required
                   maxLength={80}
-                  autoFocus
+
                   defaultValue={editing?.category || ""}
                 />
               </label>

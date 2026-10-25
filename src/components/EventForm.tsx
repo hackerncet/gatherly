@@ -1,6 +1,6 @@
-import { useState, type FormEvent } from "react";
+import { useState, useId, type FormEvent } from "react";
 import { Heart, Cake, Users, ArrowRight } from "lucide-react";
-import { briefSchema, shiftDate, today } from "../lib/domain.mjs";
+import { briefSchema, shiftDate, today } from "../lib/domain.ts";
 import type { Brief, EventType } from "../lib/types";
 export const eventTypes = [
   {
@@ -33,6 +33,8 @@ export function EventForm({
 }) {
   const [type, setType] = useState<EventType>(initial?.type || "wedding");
   const [error, setError] = useState("");
+  const [errorField, setErrorField] = useState("");
+  const errorId = useId();
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
@@ -47,9 +49,14 @@ export function EventForm({
       preferences: form.get("preferences"),
     });
     if (!result.success) {
+      const issue = result.error.issues[0];
+      const field = String(issue?.path[0] || "");
       setError(
-        result.error.issues[0]?.message || "Please check your event details.",
+        `Please check ${field || "your event details"}: ${issue?.message || "A valid value is required."}`,
       );
+      setErrorField(field);
+      const control = e.currentTarget.elements.namedItem(field);
+      if (control instanceof HTMLElement) control.focus();
       return;
     }
     onSave(result.data, form.get("shiftTimeline") === "on");
@@ -79,17 +86,20 @@ export function EventForm({
           Event name
           <input
             name="title"
+            aria-invalid={errorField === "title" || undefined}
+            aria-describedby={errorField === "title" ? errorId : undefined}
             defaultValue={initial?.title}
             required
             maxLength={100}
             placeholder="e.g. Aanya & Arjun's wedding"
-            autoFocus
           />
         </label>
         <label>
           Event date
           <input
             name="date"
+            aria-invalid={errorField === "date" || undefined}
+            aria-describedby={errorField === "date" ? errorId : undefined}
             type="date"
             required
             defaultValue={initial?.date || shiftDate(today(), 60)}
@@ -99,6 +109,8 @@ export function EventForm({
           Location
           <input
             name="location"
+            aria-invalid={errorField === "location" || undefined}
+            aria-describedby={errorField === "location" ? errorId : undefined}
             required
             maxLength={120}
             defaultValue={initial?.location}
@@ -109,6 +121,8 @@ export function EventForm({
           Expected guests
           <input
             name="guests"
+            aria-invalid={errorField === "guests" || undefined}
+            aria-describedby={errorField === "guests" ? errorId : undefined}
             type="number"
             min="1"
             max="100000"
@@ -119,7 +133,12 @@ export function EventForm({
         </label>
         <label>
           Currency
-          <select name="currency" defaultValue={initial?.currency || "INR"}>
+          <select
+            name="currency"
+            aria-invalid={errorField === "currency" || undefined}
+            aria-describedby={errorField === "currency" ? errorId : undefined}
+            defaultValue={initial?.currency || "INR"}
+          >
             <option value="INR">INR — Indian rupee</option>
             <option value="USD">USD — US dollar</option>
             <option value="EUR">EUR — Euro</option>
@@ -130,6 +149,8 @@ export function EventForm({
           Total budget
           <input
             name="budget"
+            aria-invalid={errorField === "budget" || undefined}
+            aria-describedby={errorField === "budget" ? errorId : undefined}
             type="number"
             required
             min="1"
@@ -142,6 +163,10 @@ export function EventForm({
           Make it yours <span className="optional">optional</span>
           <textarea
             name="preferences"
+            aria-invalid={errorField === "preferences" || undefined}
+            aria-describedby={
+              errorField === "preferences" ? errorId : undefined
+            }
             rows={3}
             maxLength={1600}
             defaultValue={initial?.preferences}
@@ -163,7 +188,7 @@ export function EventForm({
         </div>
       )}
       {error && (
-        <p role="alert" className="form-error">
+        <p role="alert" id={errorId} className="form-error">
           {error}
         </p>
       )}

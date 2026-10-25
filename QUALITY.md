@@ -1,5 +1,7 @@
 # Quality and acceptance evidence
 
+**Latest improvement cycle:** [IMPROVEMENT_AUDIT.md](IMPROVEMENT_AUDIT.md). The historical results below describe the earlier deployed revision. The latest implementation replaces localStorage writes, adds full production TypeScript checking, 102 tests and component/axe/coverage gates.
+
 Checked on 25 October 2026. This report records tested behavior, not a claim of perfection or certification.
 
 For the latest readiness check and newly reproduced findings, see [LIVE_AI_AUDIT_2026-10-25.md](LIVE_AI_AUDIT_2026-10-25.md). Live AI remains disabled in that check, and a cross-tab lost-update issue is documented there.

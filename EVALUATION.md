@@ -6,7 +6,7 @@
 
 The repository implements this as a responsive personal planning application with a same-origin AI API. The owner intentionally requested dummy API credentials; live AI activates after a real server-side OpenRouter key and a private access code are configured. Starter mode is clearly identified and works immediately.
 
-Latest independent readiness results and findings: [LIVE_AI_AUDIT_2026-10-25.md](LIVE_AI_AUDIT_2026-10-25.md).
+Latest findings, implementation loop and measured evidence: [IMPROVEMENT_AUDIT.md](IMPROVEMENT_AUDIT.md). Earlier baseline: [LIVE_AI_AUDIT_2026-10-25.md](LIVE_AI_AUDIT_2026-10-25.md).
 
 ## The six requested parameters
 
@@ -16,7 +16,7 @@ Latest independent readiness results and findings: [LIVE_AI_AUDIT_2026-10-25.md]
 | Efficiency                  | Secondary-view code splitting, one shared origin, immutable fingerprinted assets, revalidated HTML, no external UI assets, cached/deduplicated model catalog, bounded requests and provider concurrency                                                                                            | Production build size gate; cache-header, catalog-deduplication and concurrency tests                                                           |
 | Accessibility               | Labeled form controls and tables, keyboard focus indicators, native modal dialogs and Escape, first-field focus, skip link, textual statuses, reduced motion and responsive layouts                                                                                                                | Browser keyboard/form/contrast checks; 24 responsive-frame checks; further assistive-technology verification is listed separately in QUALITY.md |
 | Security                    | Server-only OpenRouter key, constant-time private access-code comparison, owner-configured key/code required, request limits, 45-second provider timeout, consent and minimal brief fields, React text rendering, schema-checked output, strict CSP, versioned import and CSV injection protection | Negative HTTP tests; over-budget/malformed response tests; body limits; auth, origin, rate and daily/concurrency-cap checks; dependency audit   |
-| Testing                     | 54 domain, storage and HTTP integration tests, production build, formatting, dependency audit, browser workflow and deployment smoke checks                                                                                                                                                        | `npm run check`, `npm run format:check`, `npm audit --audit-level=moderate`, QUALITY.md                                                         |
+| Testing                     | 102 domain, storage, concurrency, HTTP, component and axe tests, production build, formatting, dependency audit, browser workflow and deployment smoke checks                                                                                                                                                        | `npm run check`, `npm run format:check`, `npm audit --audit-level=moderate`, QUALITY.md                                                         |
 | Problem Statement Alignment | Three event types, category budgets and actual payments, editable task timelines, vendor quote/booking checklists, guest RSVPs, idea boards, OpenRouter model search, personalized generation preview and safe creation of a new event                                                             | Follow the demonstration below; all three starter event schemas and exact allocations are tested                                                |
 
 ## Five-minute demonstration
@@ -29,7 +29,8 @@ Latest independent readiness results and findings: [LIVE_AI_AUDIT_2026-10-25.md]
 6. Add a household to Guest list, set its party size and RSVP, and add dietary/access notes only with permission.
 7. Save an inspiration idea or add your own.
 8. Open AI Studio. Search the live text-model catalog, filter free models and review a starter plan. After configuring real credentials, consent to share the event brief and generate a live plan. Review it before creating a separate new event.
-9. Export a complete workspace backup in Settings, reload the page and verify persistence. Imports require an explicit replacement action.
+9. Open Event guide, add a timed moment and responsible team, export the calendar and event brief, and review planning risks.
+10. Export a complete workspace backup in Settings, reload the page and verify persistence. Imports require an explicit replacement action.
 
 ## AI behavior and data boundary
 

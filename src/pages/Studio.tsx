@@ -12,7 +12,8 @@ import {
   WandSparkles,
 } from "lucide-react";
 import { Botanical, Modal, PageHeading } from "../components/ui";
-import { aiPlanSchema, eventFromPlan, starterPlan } from "../lib/domain.mjs";
+import { aiPlanSchema, eventFromPlan, starterPlan } from "../lib/domain.ts";
+import { apiJson, catalogSchema, planResponseSchema } from "../lib/api.ts";
 import { money } from "../lib/storage";
 import type { Brief, Event, Model, Plan } from "../lib/types";
 function initialPrompt() {
@@ -27,11 +28,15 @@ function initialPrompt() {
 export function Studio({
   event,
   aiEnabled,
+  serviceMessage,
+  refreshStatus,
   onCreate,
   notify,
 }: {
   event: Event;
   aiEnabled: boolean;
+  serviceMessage: string;
+  refreshStatus: () => void;
   onCreate: (e: Event) => void;
   notify: (s: string) => void;
 }) {
@@ -55,7 +60,7 @@ export function Studio({
   const [error, setError] = useState("");
   const [preview, setPreview] = useState<{
     plan: Plan;
-    source: string;
+    source: "ai" | "template";
     model: string | null;
   } | null>(null);
   const [showModels, setShowModels] = useState(false);
@@ -65,11 +70,7 @@ export function Studio({
   useEffect(() => {
     const controller = new AbortController();
     setCatalogSource("loading");
-    fetch("/api/models", { signal: controller.signal })
-      .then((r) => {
-        if (!r.ok) throw new Error();
-        return r.json();
-      })
+    apiJson("/api/models", catalogSchema, { signal: controller.signal })
       .then((d) => {
         if (Array.isArray(d.models) && d.models.length) {
           setModels(d.models);
@@ -133,20 +134,15 @@ export function Studio({
     abortRef.current = controller;
     const timeout = setTimeout(() => controller.abort(), 55000);
     try {
-      const response = await fetch("/api/plan", {
+      const data = await apiJson("/api/plan", planResponseSchema, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "x-ai-access-code": code,
         },
-        body: JSON.stringify({ brief, model, prompt }),
+        body: JSON.stringify({ brief, model, prompt, consent }),
         signal: controller.signal,
       });
-      const data = await response.json();
-      if (!response.ok)
-        throw new Error(
-          data.error || "Unable to create a plan. Please try again.",
-        );
       const plan = aiPlanSchema.parse(data.plan) as Plan;
       setPreview({ plan, source: data.source, model: data.model });
       notify(
@@ -175,6 +171,11 @@ export function Studio({
       preview.plan,
     ) as Event;
     copy.notes = preview.plan.summary;
+    copy.provenance = {
+      source: preview.source === "ai" ? "ai" : "template",
+      model: preview.model,
+      createdAt: new Date().toISOString(),
+    };
     onCreate(copy);
   }
   return (
@@ -222,7 +223,18 @@ export function Studio({
             </dl>
             {event.preferences && <p>{event.preferences}</p>}
           </div>
-          <form onSubmit={generate}>
+          <div className="notice" role="status">
+            <p>{serviceMessage}</p>
+            <button
+              type="button"
+              className="text-link"
+              onClick={refreshStatus}
+              aria-label="Refresh AI service status"
+            >
+              <RefreshCw size={16} />
+            </button>
+          </div>
+          <form onSubmit={generate} aria-busy={loading}>
             <label>
               What would make it special?
               <textarea
@@ -408,6 +420,16 @@ export function Studio({
                   </li>
                 ))}
               </ol>
+              <h3>Your vendor selection checklist</h3>
+              {preview.plan.vendors.map((v) => (
+                <div className="plan-idea" key={v.category}>
+                  <ShieldCheck size={16} />
+                  <div>
+                    <strong>{v.category}</strong>
+                    <p>{v.requirements}</p>
+                  </div>
+                </div>
+              ))}
               <h3>Made a little more personal</h3>
               {preview.plan.ideas.map((idea, i) => (
                 <div className="plan-idea" key={i}>
@@ -480,7 +502,6 @@ export function Studio({
           <label>
             Search models
             <input
-              autoFocus
               type="search"
               value={modelSearch}
               onChange={(e) => setModelSearch(e.target.value)}
@@ -520,6 +541,7 @@ export function Studio({
                 <button
                   key={m.id}
                   className={`model-option ${model === m.id ? "selected" : ""}`}
+                  aria-pressed={model === m.id}
                   onClick={() => {
                     setModel(m.id);
                     setShowModels(false);
@@ -528,15 +550,23 @@ export function Studio({
                   <span>
                     <strong>{m.name}</strong>
                     <small>{m.id}</small>
-                    {!m.free && (
-                      <small>
-                        ${(Number(m.inputPrice) * 1000000).toFixed(2)} input / $
-                        {(Number(m.outputPrice) * 1000000).toFixed(2)} output
-                        per 1M tokens
-                      </small>
-                    )}
+                    {!m.free &&
+                      Number.isFinite(Number(m.inputPrice)) &&
+                      Number.isFinite(Number(m.outputPrice)) && (
+                        <small>
+                          ${(Number(m.inputPrice) * 1000000).toFixed(2)} input /
+                          ${(Number(m.outputPrice) * 1000000).toFixed(2)} output
+                          per 1M tokens
+                        </small>
+                      )}
                   </span>
-                  <span className="pill">{m.free ? "Free" : "Paid"}</span>
+                  <span className="pill">
+                    {m.free
+                      ? "Free"
+                      : Number.isFinite(Number(m.inputPrice))
+                        ? "Paid"
+                        : "Pricing unavailable"}
+                  </span>
                   {model === m.id && <Check size={17} />}
                 </button>
               ))

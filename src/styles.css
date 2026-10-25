@@ -1419,7 +1419,7 @@ td small.muted {
   color: #515f43;
   margin-bottom: 19px;
 }
-.empty h3 {
+.empty h2 {
   font-family: Georgia, serif;
   font-size: 24px;
   font-weight: 400;
@@ -4331,7 +4331,7 @@ td small.muted {
   .empty {
     padding: 50px 22px;
   }
-  .empty h3 {
+  .empty h2 {
     font-size: 25px;
   }
   .empty p {
@@ -4482,4 +4482,90 @@ td small.muted {
 /* Keep visually hidden table labels inside their horizontal scroll region. */
 .table-scroll {
   position: relative;
+}
+
+/* Event guide and recoverable page state. */
+.guide-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+  gap: 24px;
+  margin-top: 24px;
+}
+.guide-section {
+  padding: 28px;
+  min-width: 0;
+}
+.guide-insight {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border, #e3e7de);
+}
+.guide-insight h3 {
+  font-size: 17px;
+  margin-bottom: 8px;
+}
+.guide-insight p {
+  font-size: 14px;
+  line-height: 1.65;
+}
+.guide-source {
+  margin-top: 24px;
+  align-items: flex-start;
+}
+.guide-source p {
+  margin: 6px 0;
+  line-height: 1.65;
+}
+.agenda-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.agenda-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 0;
+  border-bottom: 1px solid #e3e7de;
+}
+.agenda-list time {
+  font-weight: 600;
+  color: #365746;
+}
+.agenda-list li > div {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.agenda-list p {
+  margin: 5px 0;
+  font-size: 13px;
+}
+.recovery-screen {
+  padding: 36px;
+}
+.recovery-screen p {
+  max-width: 700px;
+  line-height: 1.75;
+}
+.recovery-screen .button-group {
+  margin-top: 24px;
+}
+@media (max-width: 1100px) {
+  .guide-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 600px) {
+  .guide-section {
+    padding: 18px;
+  }
+  .guide-section .section-title {
+    flex-wrap: wrap;
+  }
+  .agenda-list li {
+    gap: 8px;
+  }
+  .guide-section .section-title .button {
+    margin-top: 10px;
+  }
 }

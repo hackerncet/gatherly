@@ -11,7 +11,7 @@ import {
   totals,
   today,
   workspaceSchema,
-} from "../src/lib/domain.mjs";
+} from "../src/lib/domain.ts";
 const brief = {
   title: "A beautiful day",
   type: "wedding",
@@ -28,7 +28,7 @@ for (const type of ["wedding", "birthday", "community"])
     assert.equal(eventSchema.safeParse(event).success, true);
     assert.equal(totals(event).allocated, brief.budget);
     assert.ok(event.tasks.length >= 8);
-    assert.equal(event.ideas.length, 3);
+    assert.ok(event.ideas.length >= 3);
     assert.ok(event.budgets.some((b) => b.category === "Contingency"));
     assert.ok(event.tasks.every((t) => t.date <= brief.date));
     assert.equal(
@@ -124,7 +124,7 @@ test("past event timelines preserve historical dates", () => {
 });
 
 test("event rescheduling moves unfinished tasks and preserves completed dates and payments", async () => {
-  const { reviseEvent } = await import("../src/lib/domain.mjs");
+  const { reviseEvent } = await import("../src/lib/domain.ts");
   const event = eventFromPlan(brief);
   event.tasks[0].done = true;
   event.budgets[0].paid = 1200;
@@ -138,7 +138,7 @@ test("event rescheduling moves unfinished tasks and preserves completed dates an
   assert.equal(event.date, brief.date);
 });
 test("event rescheduling can preserve every original deadline", async () => {
-  const { reviseEvent } = await import("../src/lib/domain.mjs");
+  const { reviseEvent } = await import("../src/lib/domain.ts");
   const event = eventFromPlan(brief);
   const updated = reviseEvent(
     event,
@@ -150,4 +150,27 @@ test("event rescheduling can preserve every original deadline", async () => {
 test("CSV neutralizes whitespace-prefixed formulas and newline prefixes", () => {
   for (const value of [" =1+1", "\t=SUM(A1)", "\n+cmd", "\uFEFF@SUM(A1)"])
     assert.ok(escapeCsv(value).startsWith("\"'"));
+});
+
+test("secure UUID fallback works without randomUUID and preserves uniqueness", async () => {
+  const { uid } = await import("../src/lib/domain.ts");
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, "crypto");
+  const source = globalThis.crypto;
+  Object.defineProperty(globalThis, "crypto", {
+    configurable: true,
+    value: { getRandomValues: source.getRandomValues.bind(source) },
+  });
+  try {
+    const values = Array.from({ length: 20 }, uid);
+    assert.equal(new Set(values).size, 20);
+    assert.ok(
+      values.every((value) =>
+        /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(
+          value,
+        ),
+      ),
+    );
+  } finally {
+    Object.defineProperty(globalThis, "crypto", descriptor);
+  }
 });

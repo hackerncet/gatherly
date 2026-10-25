@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { CalendarDays, CheckCheck, Pencil, Plus, Trash2 } from "lucide-react";
 import { Confirm, Empty, Modal, PageHeading } from "../components/ui";
-import { taskSchema, today, uid } from "../lib/domain.mjs";
+import { taskSchema, today, uid } from "../lib/domain.ts";
 import { dateLabel } from "../lib/storage";
 import type { Event, Task } from "../lib/types";
 export function Timeline({
@@ -200,7 +200,7 @@ export function Timeline({
                 Task name
                 <input
                   name="title"
-                  autoFocus
+
                   required
                   maxLength={180}
                   placeholder="e.g. Confirm the cake delivery"

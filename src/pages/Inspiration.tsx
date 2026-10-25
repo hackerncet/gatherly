@@ -14,7 +14,7 @@ import {
   Modal,
   PageHeading,
 } from "../components/ui";
-import { ideaSchema, uid } from "../lib/domain.mjs";
+import { ideaSchema, uid } from "../lib/domain.ts";
 import type { Event } from "../lib/types";
 export function Inspiration({
   event,
@@ -162,7 +162,7 @@ export function Inspiration({
             <div className="form-grid">
               <label className="span-2">
                 Idea title
-                <input name="title" required maxLength={160} autoFocus />
+                <input name="title" required maxLength={160} />
               </label>
               <label className="span-2">
                 The details

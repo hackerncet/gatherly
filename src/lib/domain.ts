@@ -1,5 +1,11 @@
 import { z } from "zod";
 const text = (max = 200) => z.string().trim().min(1).max(max);
+export const agendaItemSchema = z.object({
+  id: text(100),
+  time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  title: text(160),
+  owner: z.string().trim().max(100),
+});
 export const dateSchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -67,9 +73,24 @@ export const eventSchema = briefSchema
     guestList: z.array(guestSchema).max(1000),
     ideas: z.array(ideaSchema).max(100),
     notes: z.string().max(10000),
+    agenda: z.array(agendaItemSchema).max(50).default([]),
+    provenance: z
+      .object({
+        source: z.enum(["ai", "template"]),
+        model: z.string().max(160).nullable(),
+        createdAt: z.string().datetime(),
+      })
+      .optional(),
   })
   .superRefine((event, context) => {
-    for (const key of ["budgets", "tasks", "vendors", "guestList", "ideas"]) {
+    for (const key of [
+      "budgets",
+      "tasks",
+      "vendors",
+      "guestList",
+      "ideas",
+      "agenda",
+    ] as const) {
       const entries = event[key];
       if (new Set(entries.map((entry) => entry.id)).size !== entries.length) {
         context.addIssue({
@@ -117,7 +138,15 @@ export const aiPlanSchema = z.object({
     .array(z.object({ title: text(160), detail: text(600), tag: text(50) }))
     .min(1)
     .max(12),
+  vendors: z
+    .array(z.object({ category: text(80), requirements: text(600) }))
+    .max(10)
+    .default([]),
 });
+export type Brief = z.infer<typeof briefSchema>;
+export type Plan = z.infer<typeof aiPlanSchema>;
+export type Event = z.infer<typeof eventSchema>;
+export type Workspace = z.infer<typeof workspaceSchema>;
 export function uid() {
   if (globalThis.crypto.randomUUID) return globalThis.crypto.randomUUID();
   const bytes = globalThis.crypto.getRandomValues(new Uint8Array(16));
@@ -126,7 +155,7 @@ export function uid() {
   const hex = [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
-export function shiftDate(date, days) {
+export function shiftDate(date: string, days: number) {
   const d = new Date(`${date}T12:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
@@ -135,7 +164,10 @@ export const today = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
-export function allocateBudget(total, weights) {
+export function allocateBudget(
+  total: number,
+  weights: readonly (readonly [string, number])[],
+) {
   let used = 0;
   return weights.map(([category, percent], i) => {
     const amount =
@@ -146,7 +178,12 @@ export function allocateBudget(total, weights) {
     return { category, amount };
   });
 }
-const templateData = {
+interface Template {
+  weights: [string, number][];
+  tasks: [string, number, string][];
+  ideas: [string, string, string][];
+}
+const templateData: Record<Brief["type"], Template> = {
   wedding: {
     weights: [
       ["Venue & catering", 40],
@@ -261,20 +298,87 @@ const templateData = {
     ],
   },
 };
-export function starterPlan(brief) {
+export function starterPlan(brief: Brief): Plan {
   const t = templateData[brief.type];
-  return {
-    summary: `A thoughtful starting point for ${brief.title}: ${brief.guests} guests in ${brief.location}. Protect a 10% contingency, confirm local quotes, and make the experience welcoming. ${brief.preferences ? `Your preferences: ${brief.preferences}. ` : ""}These are editable planning estimates, not vendor quotes.`,
+  const preferences = brief.preferences.toLowerCase();
+  const tailored: Plan["ideas"] = [];
+  const extraTasks: Plan["tasks"] = [];
+  if (/access|wheelchair|step.free|inclusive|quiet|sensory/.test(preferences)) {
+    tailored.push({
+      title: "A welcome everyone can use",
+      detail:
+        "Confirm step-free routes and accessible toilets with the venue. Offer quiet seating, clear signs and a way for guests to share access needs privately.",
+      tag: "Accessibility",
+    });
+    extraTasks.push({
+      title: "Confirm step-free routes, accessible toilets and quiet seating",
+      daysBefore: 14,
+      category: "Accessibility",
+    });
+  }
+  if (/vegan|vegetarian|allerg|dietary|gluten/.test(preferences)) {
+    tailored.push({
+      title: "A menu with clear choices",
+      detail:
+        "Request suitable vegetarian or vegan choices, label ingredients and ask the caterer about allergen cross-contact. Confirm individual needs directly with guests.",
+      tag: "Food & inclusion",
+    });
+    extraTasks.push({
+      title: "Confirm dietary options, ingredient labels and allergen handling",
+      daysBefore: 10,
+      category: "Catering",
+    });
+  }
+  if (/outdoor|garden|rain|weather/.test(preferences)) {
+    tailored.push({
+      title: "A ready-to-use weather backup",
+      detail:
+        "Agree on an indoor or sheltered alternative, a decision time and a clear way to notify guests. Check shade, drinking water and safe access routes.",
+      tag: "Weather plan",
+    });
+    extraTasks.push({
+      title: "Confirm the weather backup and decision contact",
+      daysBefore: 7,
+      category: "Safety",
+    });
+  }
+  if (/eco|sustain|low.waste|reus|local/.test(preferences)) {
+    tailored.push({
+      title: "Less waste, more intention",
+      detail:
+        "Use reusable decor, refill water stations and clearly marked waste bins. Coordinate leftover food and transport arrangements with the venue.",
+      tag: "Sustainability",
+    });
+  }
+  const ideas = [
+    ...tailored,
+    ...t.ideas.map(([title, detail, tag]) => ({ title, detail, tag })),
+  ].slice(0, 5);
+  return aiPlanSchema.parse({
+    summary: `A starting point for ${brief.title}: ${brief.guests} guests in ${brief.location}. Protect a 10% contingency and confirm local quotes. ${brief.preferences ? `Your preferences: ${brief.preferences.slice(0, 950)}. ` : ""}These are editable planning estimates, not vendor quotes.`,
     budgets: allocateBudget(brief.budget, t.weights),
-    tasks: t.tasks.map(([title, daysBefore, category]) => ({
-      title,
-      daysBefore,
-      category,
-    })),
-    ideas: t.ideas.map(([title, detail, tag]) => ({ title, detail, tag })),
-  };
+    tasks: [
+      ...t.tasks.map(([title, daysBefore, category]) => ({
+        title,
+        daysBefore,
+        category,
+      })),
+      ...extraTasks,
+    ],
+    ideas,
+    vendors: t.weights
+      .filter(([category]) => category !== "Contingency")
+      .slice(0, 4)
+      .map(([category]) => ({
+        category,
+        requirements: `Collect a written quote, confirm availability, review cancellation terms and confirm ${category.toLowerCase()} requirements, including relevant access and dietary needs.`,
+      })),
+  });
 }
-export function eventFromPlan(brief, plan = starterPlan(brief)) {
+export function eventFromPlan(
+  brief: Brief,
+  plan: Plan = starterPlan(brief),
+): Event {
   const earliest = brief.date >= today() ? today() : null;
   return {
     ...brief,
@@ -295,13 +399,28 @@ export function eventFromPlan(brief, plan = starterPlan(brief)) {
       category: t.category,
       done: false,
     })),
-    vendors: [],
+    vendors: plan.vendors.map((v) => ({
+      id: uid(),
+      name: `Your ${v.category.toLowerCase()} team`.slice(0, 100),
+      category: v.category,
+      contact: "",
+      quote: 0,
+      status: "shortlisted" as const,
+      notes: v.requirements,
+      checklist: [false, false, false, false],
+    })),
     guestList: [],
     ideas: plan.ideas.map((i) => ({ ...i, id: uid(), saved: false })),
     notes: "",
+    agenda: [],
+    provenance: {
+      source: "template",
+      model: null,
+      createdAt: new Date().toISOString(),
+    },
   };
 }
-export function reviseEvent(event, brief, moveTimeline = true) {
+export function reviseEvent(event: Event, brief: Brief, moveTimeline = true) {
   const delta = Math.round(
     (Date.parse(`${brief.date}T12:00:00Z`) -
       Date.parse(`${event.date}T12:00:00Z`)) /
@@ -317,7 +436,7 @@ export function reviseEvent(event, brief, moveTimeline = true) {
     ),
   });
 }
-export function totals(event) {
+export function totals(event: Event) {
   const allocated = event.budgets.reduce((n, b) => n + b.planned, 0);
   const paid = event.budgets.reduce((n, b) => n + b.paid, 0);
   return {
@@ -332,7 +451,7 @@ export function totals(event) {
       .reduce((n, g) => n + g.count, 0),
   };
 }
-export function escapeCsv(value) {
+export function escapeCsv(value: unknown) {
   const s = String(value);
   return `"${/^(?:[\s\uFEFF]*[=+\-@]|[\t\r\n])/.test(s) ? "'" : ""}${s.replaceAll('"', '""')}"`;
 }

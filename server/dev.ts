@@ -1,5 +1,5 @@
 import { createServer } from "vite";
-import { createApp } from "./app.mjs";
+import { createApp } from "./app.ts";
 const vite = await createServer({
   server: { middlewareMode: true, hmr: false },
   appType: "spa",

@@ -1,4 +1,4 @@
-import { eventFromPlan, shiftDate, today, workspaceSchema } from "./domain.mjs";
+import { eventFromPlan, shiftDate, today, workspaceSchema } from "./domain.ts";
 import type { Brief, Event, Workspace } from "./types";
 export const STORAGE_KEY = "gatherly.workspace.v1";
 function demoWorkspace(): Workspace {
@@ -89,6 +89,7 @@ export function loadWorkspace(): {
   workspace: Workspace;
   warning: string;
   recovery?: string;
+  raw?: string;
 } {
   let raw: string | null = null;
   try {
@@ -97,7 +98,7 @@ export function loadWorkspace(): {
     const value = workspaceSchema.parse(JSON.parse(raw)) as Workspace;
     if (!value.events.some((e) => e.id === value.activeId))
       value.activeId = value.events[0].id;
-    return { workspace: value, warning: "" };
+    return { workspace: value, warning: "", raw };
   } catch {
     return {
       workspace: demoWorkspace(),
@@ -107,20 +108,12 @@ export function loadWorkspace(): {
     };
   }
 }
-export function saveWorkspace(workspace: Workspace) {
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify(workspaceSchema.parse(workspace)),
-  );
-}
 export function parseBackup(raw: string): Workspace {
   if (raw.length > 25_000_000)
     throw new Error("Backup must be smaller than 25 MB.");
   const value = workspaceSchema.parse(JSON.parse(raw)) as Workspace;
   if (!value.events.some((e) => e.id === value.activeId))
     value.activeId = value.events[0].id;
-  if (new Set(value.events.map((e) => e.id)).size !== value.events.length)
-    throw new Error("Backup contains duplicate event IDs.");
   return value;
 }
 export function downloadFile(
@@ -132,8 +125,13 @@ export function downloadFile(
   const a = document.createElement("a");
   a.href = url;
   a.download = name;
+  a.style.display = "none";
+  document.body.append(a);
   a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  setTimeout(() => {
+    a.remove();
+    URL.revokeObjectURL(url);
+  }, 1000);
 }
 export const money = (value: number, currency: string) =>
   new Intl.NumberFormat("en-IN", {

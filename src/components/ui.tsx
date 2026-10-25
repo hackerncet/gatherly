@@ -28,11 +28,11 @@ export function Modal({
   wide?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
-  const opener = useRef(document.activeElement as HTMLElement | null);
   const id = useId();
   const desc = useId();
   useEffect(() => {
     const dialog = ref.current;
+    const originalOpener = document.activeElement as HTMLElement | null;
     dialog?.showModal();
     dialog
       ?.querySelector<HTMLElement>(
@@ -41,13 +41,15 @@ export function Modal({
       ?.focus();
     return () => {
       dialog?.close();
-      const target = opener.current?.isConnected
-        ? opener.current
+      const target = originalOpener?.isConnected
+        ? originalOpener
         : document.querySelector<HTMLElement>(".new-event");
       target?.focus();
     };
   }, []);
   return (
+    // Native dialog keyboard trapping and backdrop clicks belong to the dialog itself.
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
     <dialog
       ref={ref}
       className={`modal ${wide ? "wide" : ""}`}
@@ -145,7 +147,7 @@ export function Empty({
   return (
     <div className="empty">
       <div className="empty-icon">{icon}</div>
-      <h3>{title}</h3>
+      <h2>{title}</h2>
       <p>{description}</p>
       {action}
     </div>

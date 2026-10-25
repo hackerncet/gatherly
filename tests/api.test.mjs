@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { once } from "node:events";
-import { createApp } from "../server/app.mjs";
-import { starterPlan } from "../src/lib/domain.mjs";
+import { createApp } from "../server/app.ts";
+import { starterPlan } from "../src/lib/domain.ts";
 const brief = {
   title: "Community garden day",
   type: "community",
@@ -13,7 +13,12 @@ const brief = {
   currency: "INR",
   preferences: "Accessible, low waste",
 };
-const input = { brief, model: "test/model", prompt: "Seasonal food" };
+const input = {
+  brief,
+  model: "test/model",
+  prompt: "Seasonal food",
+  consent: true,
+};
 const env = {
   NODE_ENV: "test",
   OPENROUTER_API_KEY: "test-server-only-secret",
@@ -298,7 +303,7 @@ test("unknown API paths return JSON instead of the SPA", () =>
   }));
 test("production asset paths cannot read server sources or dotfiles", () =>
   run({ env: {} }, async (base) => {
-    assert.equal((await fetch(`${base}/server/app.mjs`)).status, 404);
+    assert.equal((await fetch(`${base}/server/app.ts`)).status, 404);
     assert.equal((await fetch(`${base}/.env`)).status, 404);
     assert.equal((await fetch(`${base}/`)).status, 200);
   }));
@@ -419,3 +424,158 @@ test("fingerprinted assets use immutable caching and entry HTML revalidates", ()
     assert.equal(asset.status, 200);
     assert.match(asset.headers.get("cache-control"), /immutable/);
   }));
+
+test("health pinpoints missing configuration without disclosing credential values", () =>
+  run({ env: { OPENROUTER_API_KEY: "configured-key" } }, async (base) => {
+    const data = await (await fetch(`${base}/api/health`)).json();
+    assert.deepEqual(data.ai, {
+      enabled: false,
+      keyConfigured: true,
+      accessConfigured: false,
+    });
+    assert.ok(!JSON.stringify(data).includes("configured-key"));
+  }));
+test("planning endpoint rejects unsupported content types", () =>
+  run({ env: {} }, async (base) => {
+    const response = await fetch(`${base}/api/plan`, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify(input),
+    });
+    assert.equal(response.status, 415);
+  }));
+test("maximum valid brief produces a contract-valid starter response", () =>
+  run({ env: {} }, async (base) => {
+    const { aiPlanSchema } = await import("../src/lib/domain.ts");
+    const response = await post(base, {
+      ...input,
+      brief: { ...brief, preferences: "p".repeat(1600) },
+    });
+    assert.equal(response.status, 200);
+    assert.ok(aiPlanSchema.safeParse((await response.json()).plan).success);
+  }));
+for (const type of ["unallocated", "no contingency"])
+  test(`AI plans with ${type} fail validation`, () => {
+    const plan = starterPlan(brief);
+    if (type === "unallocated") plan.budgets[0].amount--;
+    else
+      plan.budgets = plan.budgets.map((b) => ({
+        ...b,
+        category: b.category === "Contingency" ? "Extra decor" : b.category,
+      }));
+    return run({ env, fetchImpl: mockFetch(plan) }, async (base) => {
+      const response = await post(base, input, {
+        "x-ai-access-code": env.AI_ACCESS_CODE,
+      });
+      assert.equal(response.status, 502);
+    });
+  });
+test("actual provider model identity and vendor requirements are returned", () =>
+  run(
+    {
+      env,
+      fetchImpl: async (url) =>
+        url.endsWith("/models")
+          ? mockFetch()(url)
+          : new Response(
+              JSON.stringify({
+                model: "provider/actual-model",
+                choices: [
+                  { message: { content: JSON.stringify(starterPlan(brief)) } },
+                ],
+              }),
+            ),
+    },
+    async (base) => {
+      const data = await (
+        await post(base, input, { "x-ai-access-code": env.AI_ACCESS_CODE })
+      ).json();
+      assert.equal(data.source, "ai");
+      assert.equal(data.model, "provider/actual-model");
+      assert.ok(data.plan.vendors.every((v) => v.requirements.length > 0));
+    },
+  ));
+test("oversized streamed provider output is rejected without leaking its contents", () =>
+  run(
+    {
+      env,
+      fetchImpl: async (url) =>
+        url.endsWith("/models")
+          ? mockFetch()(url)
+          : new Response("SECRET-UPSTREAM-DETAILS".repeat(8000)),
+    },
+    async (base) => {
+      const response = await post(base, input, {
+        "x-ai-access-code": env.AI_ACCESS_CODE,
+      });
+      assert.equal(response.status, 502);
+      assert.ok(!(await response.text()).includes("SECRET-UPSTREAM"));
+    },
+  ));
+test("an oversized model catalog is bounded and falls back", () =>
+  run(
+    { env, fetchImpl: async () => new Response("x".repeat(3_000_001)) },
+    async (base) => {
+      const data = await (await fetch(`${base}/api/models`)).json();
+      assert.equal(data.source, "fallback");
+    },
+  ));
+test("unknown catalog prices are not displayed as zero cost", () =>
+  run(
+    {
+      env,
+      fetchImpl: async () =>
+        new Response(
+          JSON.stringify({
+            data: [{ id: "unknown/model", name: "Unknown pricing" }],
+          }),
+        ),
+    },
+    async (base) => {
+      const data = await (await fetch(`${base}/api/models`)).json();
+      const model = data.models.find((m) => m.id === "unknown/model");
+      assert.equal(model.free, false);
+      assert.equal(model.inputPrice, "unknown");
+    },
+  ));
+
+test("live provider submission requires explicit server-validated consent", () =>
+  run(
+    {
+      env,
+      fetchImpl: () => {
+        throw new Error("No data should leave the server");
+      },
+    },
+    async (base) => {
+      const response = await post(
+        base,
+        { ...input, consent: false },
+        { "x-ai-access-code": env.AI_ACCESS_CODE },
+      );
+      assert.equal(response.status, 403);
+      assert.match((await response.json()).error, /Agree to share/);
+    },
+  ));
+
+test("provider authentication failure is actionable without exposing upstream details", () =>
+  run(
+    {
+      env,
+      fetchImpl: async (url) =>
+        url.endsWith("/models")
+          ? mockFetch()(url)
+          : new Response("private upstream credential details", {
+              status: 401,
+            }),
+    },
+    async (base) => {
+      const response = await post(base, input, {
+        "x-ai-access-code": env.AI_ACCESS_CODE,
+      });
+      assert.equal(response.status, 503);
+      const data = await response.json();
+      assert.match(data.error, /server credentials/);
+      assert.ok(!data.error.includes("private upstream"));
+    },
+  ));

@@ -21,6 +21,9 @@ import {
 import { Logo, Modal, Confirm } from "./components/ui";
 import { EventForm } from "./components/EventForm";
 import { Overview } from "./pages/Overview";
+const Guide = lazy(() =>
+  import("./pages/Guide").then((m) => ({ default: m.Guide })),
+);
 const BudgetPage = lazy(() =>
   import("./pages/Budget").then((module) => ({ default: module.BudgetPage })),
 );
@@ -46,9 +49,12 @@ const SettingsPage = lazy(() =>
     default: module.SettingsPage,
   })),
 );
-import { eventFromPlan, reviseEvent } from "./lib/domain.mjs";
-import { downloadFile, loadWorkspace, saveWorkspace } from "./lib/storage";
-import type { Brief, Event, Page, Workspace } from "./lib/types";
+import { eventFromPlan, reviseEvent, eventSchema } from "./lib/domain.ts";
+import { downloadFile } from "./lib/storage";
+import { PageBoundary } from "./components/PageBoundary";
+import { useServiceStatus } from "./lib/useServiceStatus";
+import { useWorkspace } from "./lib/useWorkspace";
+import type { Brief, Event, Page } from "./lib/types";
 const nav = [
   { id: "overview" as Page, label: "Overview", icon: LayoutDashboard },
   { id: "budget" as Page, label: "Budget", icon: Wallet },
@@ -56,6 +62,7 @@ const nav = [
   { id: "vendors" as Page, label: "Vendors", icon: Store },
   { id: "guests" as Page, label: "Guest list", icon: Users },
   { id: "inspiration" as Page, label: "Inspiration", icon: Lightbulb },
+  { id: "guide" as Page, label: "Event guide", icon: CalendarDays },
 ];
 const pageFromHash = (): Page => {
   const value = location.hash.slice(1) as Page;
@@ -64,10 +71,18 @@ const pageFromHash = (): Page => {
     : "overview";
 };
 export default function App() {
-  const [loaded] = useState(loadWorkspace);
-  const [workspace, setWorkspace] = useState<Workspace>(loaded.workspace);
-  const [saveBlocked, setSaveBlocked] = useState(Boolean(loaded.warning));
-  const [warning, setWarning] = useState(loaded.warning);
+  const {
+    workspace,
+    setWorkspace,
+    ready,
+    warning,
+    blocked: saveBlocked,
+    status: saveStatus,
+    recovery,
+    hasSavedData,
+    reload,
+    replace,
+  } = useWorkspace();
   const [page, setPage] = useState<Page>(pageFromHash);
   const [modal, setModal] = useState<
     "create" | "edit" | "menu" | "help" | null
@@ -75,33 +90,19 @@ export default function App() {
   const [toast, setToast] = useState("");
   const [search, setSearch] = useState("");
   const [deleting, setDeleting] = useState(false);
-  const [aiEnabled, setAiEnabled] = useState(false);
-  const headingRef = useRef<HTMLDivElement>(null);
+  const service = useServiceStatus();
+  const aiEnabled = service.enabled;
+  const headingRef = useRef<HTMLElement>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const event =
     workspace.events.find((e) => e.id === workspace.activeId) ||
     workspace.events[0];
-  useEffect(() => {
-    if (saveBlocked) return;
-    try {
-      saveWorkspace(workspace);
-      setWarning("");
-    } catch {
-      setWarning(
-        "Your changes are in memory, but could not be saved on this browser. Export a backup before leaving.",
-      );
-    }
-  }, [workspace, saveBlocked]);
   useEffect(() => {
     const update = () => {
       setPage(pageFromHash());
       setSearch("");
     };
     window.addEventListener("hashchange", update);
-    fetch("/api/health")
-      .then((r) => r.json())
-      .then((d) => setAiEnabled(d.aiEnabled === true))
-      .catch(() => {});
     return () => {
       window.removeEventListener("hashchange", update);
       if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -121,6 +122,14 @@ export default function App() {
     setTimeout(() => headingRef.current?.focus(), 0);
   }
   function updateEvent(next: Event) {
+    const parsed = eventSchema.safeParse(next);
+    if (!parsed.success) {
+      notify(
+        "This change exceeds an event limit or contains invalid data. Check the fields and export completed records if you need more space.",
+      );
+      return;
+    }
+    next = parsed.data;
     setWorkspace((w) => ({
       ...w,
       events: w.events.map((e) => (e.id === next.id ? next : e)),
@@ -206,6 +215,13 @@ export default function App() {
       </button>
     </>
   );
+  if (!ready)
+    return (
+      <div className="page-loading" role="status">
+        <Logo />
+        <p>Opening your saved planning space…</p>
+      </div>
+    );
   return (
     <>
       <a
@@ -218,7 +234,7 @@ export default function App() {
       >
         Skip to content
       </a>
-      <aside className="sidebar">
+      <aside className="sidebar" aria-label="Planning navigation">
         <button
           className="brand-button"
           aria-label="Gatherly home"
@@ -249,6 +265,7 @@ export default function App() {
           </div>
           <button
             className={`nav-item ${page === "settings" ? "active" : ""}`}
+            aria-current={page === "settings" ? "page" : undefined}
             onClick={() => navigate("settings")}
           >
             <Settings size={18} />
@@ -257,9 +274,9 @@ export default function App() {
           <button className="nav-item" onClick={() => setModal("help")}>
             <CircleHelp size={18} />A helping hand
           </button>
-          <div className="local-status">
+          <div className="local-status" role="status" aria-live="polite">
             <span />
-            Saved on your device
+            {saveStatus}
           </div>
         </div>
       </aside>
@@ -348,101 +365,126 @@ export default function App() {
               <Download size={16} />
               Export
             </button>
-            {saveBlocked && loaded.recovery && (
+            {recovery && (
               <button
                 onClick={() =>
-                  downloadFile("gatherly-recovery.json", loaded.recovery!)
+                  downloadFile("gatherly-recovery.json", recovery!)
                 }
               >
-                Download unread data
+                Download recovery data
               </button>
             )}
-            {saveBlocked && (
+            {saveBlocked && hasSavedData && (
+              <button onClick={() => void reload()}>
+                Load latest saved workspace
+              </button>
+            )}
+            {saveBlocked && !hasSavedData && (
               <button
                 onClick={() => {
-                  setSaveBlocked(false);
-                  setWarning("");
+                  void replace(workspace);
                 }}
               >
-                Save current workspace
+                Save recovery workspace
               </button>
             )}
           </div>
         )}
         <main
           id="main-content"
+          ref={headingRef}
           tabIndex={-1}
           className={`main-content page-${page}`}
         >
-          <div
-            tabIndex={-1}
-            ref={headingRef}
-            className="page-focus"
-            aria-label={`${page} page`}
-          />
-          <Suspense
-            fallback={
-              <div className="page-loading" role="status">
-                <Logo small />
-                <p>Bringing your plans together…</p>
-              </div>
+          <PageBoundary
+            resetKey={`${page}-${event.id}`}
+            onHome={() => navigate("overview")}
+            onBackup={() =>
+              downloadFile(
+                "gatherly-backup.json",
+                JSON.stringify(workspace, null, 2),
+              )
             }
           >
-            {page === "overview" && (
-              <Overview
-                event={event}
-                onUpdate={updateEvent}
-                navigate={navigate}
-                onEdit={() => setModal("edit")}
-              />
-            )}{" "}
-            {page === "budget" && (
-              <BudgetPage
-                event={event}
-                onUpdate={updateEvent}
-                notify={notify}
-              />
-            )}{" "}
-            {page === "timeline" && (
-              <Timeline event={event} onUpdate={updateEvent} notify={notify} />
-            )}{" "}
-            {page === "vendors" && (
-              <Vendors event={event} onUpdate={updateEvent} notify={notify} />
-            )}{" "}
-            {page === "guests" && (
-              <Guests event={event} onUpdate={updateEvent} notify={notify} />
-            )}{" "}
-            {page === "inspiration" && (
-              <Inspiration
-                event={event}
-                onUpdate={updateEvent}
-                notify={notify}
-              />
-            )}{" "}
-            {page === "studio" && (
-              <Studio
-                key={event.id}
-                event={event}
-                aiEnabled={aiEnabled}
-                onCreate={addEvent}
-                notify={notify}
-              />
-            )}{" "}
-            {page === "settings" && (
-              <SettingsPage
-                workspace={workspace}
-                event={event}
-                onImport={(w) => {
-                  setWorkspace(w);
-                  setSaveBlocked(false);
-                  notify("Workspace imported successfully.");
-                }}
-                onDelete={() => setDeleting(true)}
-                onEdit={() => setModal("edit")}
-                notify={notify}
-              />
-            )}
-          </Suspense>
+            <Suspense
+              fallback={
+                <div className="page-loading" role="status">
+                  <Logo small />
+                  <p>Bringing your plans together…</p>
+                </div>
+              }
+            >
+              {page === "overview" && (
+                <Overview
+                  event={event}
+                  onUpdate={updateEvent}
+                  navigate={navigate}
+                  onEdit={() => setModal("edit")}
+                />
+              )}{" "}
+              {page === "budget" && (
+                <BudgetPage
+                  event={event}
+                  onUpdate={updateEvent}
+                  notify={notify}
+                />
+              )}{" "}
+              {page === "timeline" && (
+                <Timeline
+                  event={event}
+                  onUpdate={updateEvent}
+                  notify={notify}
+                />
+              )}{" "}
+              {page === "vendors" && (
+                <Vendors event={event} onUpdate={updateEvent} notify={notify} />
+              )}{" "}
+              {page === "guests" && (
+                <Guests event={event} onUpdate={updateEvent} notify={notify} />
+              )}{" "}
+              {page === "inspiration" && (
+                <Inspiration
+                  event={event}
+                  onUpdate={updateEvent}
+                  notify={notify}
+                />
+              )}{" "}
+              {page === "studio" && (
+                <Studio
+                  key={event.id}
+                  event={event}
+                  aiEnabled={aiEnabled}
+                  serviceMessage={service.message}
+                  refreshStatus={service.retry}
+                  onCreate={addEvent}
+                  notify={notify}
+                />
+              )}{" "}
+              {page === "settings" && (
+                <SettingsPage
+                  workspace={workspace}
+                  event={event}
+                  onImport={(w) => {
+                    void replace(w);
+                    notify(
+                      "Workspace import queued. Check the save status before leaving.",
+                    );
+                  }}
+                  onDelete={() => setDeleting(true)}
+                  onEdit={() => setModal("edit")}
+                  notify={notify}
+                />
+              )}
+              {page === "guide" && (
+                <Guide
+                  event={event}
+                  onUpdate={updateEvent}
+                  navigate={navigate}
+                  notify={notify}
+                />
+              )}
+            </Suspense>
+          </PageBoundary>
           <footer className="app-footer">
             <span>Made for the moments that matter.</span>
             <span>

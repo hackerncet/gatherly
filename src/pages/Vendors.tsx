@@ -8,7 +8,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { Confirm, Empty, Modal, PageHeading } from "../components/ui";
-import { uid, vendorSchema } from "../lib/domain.mjs";
+import { uid, vendorSchema } from "../lib/domain.ts";
 import { money } from "../lib/storage";
 import type { Event, Vendor } from "../lib/types";
 const checks = [
@@ -226,7 +226,7 @@ export function Vendors({
                 Vendor or business name
                 <input
                   name="name"
-                  autoFocus
+
                   required
                   maxLength={100}
                   defaultValue={editing?.name}

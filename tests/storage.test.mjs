@@ -1,12 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {
-  loadWorkspace,
-  parseBackup,
-  saveWorkspace,
-  STORAGE_KEY,
-} from "../src/lib/storage.ts";
-import { eventFromPlan } from "../src/lib/domain.mjs";
+import { loadWorkspace, parseBackup, STORAGE_KEY } from "../src/lib/storage.ts";
+import { eventFromPlan } from "../src/lib/domain.ts";
 const records = new Map();
 globalThis.localStorage = {
   getItem: (key) => records.get(key) ?? null,
@@ -23,10 +18,10 @@ const event = eventFromPlan({
   preferences: "",
 });
 const workspace = { version: 1, events: [event], activeId: event.id };
-test("valid workspace saves and restores without losing payments or tasks", () => {
+test("legacy workspace migrates without losing payments or tasks", () => {
   event.budgets[0].paid = 1234;
   event.tasks[0].done = true;
-  saveWorkspace(workspace);
+  records.set(STORAGE_KEY, JSON.stringify(workspace));
   const restored = loadWorkspace();
   assert.equal(restored.warning, "");
   assert.equal(restored.workspace.events[0].budgets[0].paid, 1234);
