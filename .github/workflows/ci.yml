@@ -16,7 +16,13 @@ jobs:
           node-version: "24"
           cache: npm
       - run: npm ci
-      - run: npm run format:check
+      - name: Verify formatting and show corrections
+        run: |
+          if ! npm run format:check; then
+            npx prettier --write src server scripts tests index.html package.json tsconfig.json vite.config.ts vitest.config.ts eslint.config.js
+            git diff
+            exit 1
+          fi
       - name: Verify with the production build environment
         run: npm run check
         env:
