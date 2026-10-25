@@ -646,5 +646,4 @@ for (const [code, choice] of [
           /PRIVATE|test-server-only-secret/,
         );
       },
-    ),
-  );
+    ));
