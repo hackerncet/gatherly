@@ -1,5 +1,7 @@
 # Gatherly
 
+Live app: https://gatherly-qx5g.onrender.com · Source: https://github.com/hackerncet/gatherly
+
 A thoughtful GenAI event planning assistant for weddings, birthdays and community events. Plan a budget, build a timeline, organize real vendor quotes, track guests and discover personal touches in one calm workspace.
 
 ## Run locally
@@ -78,10 +80,10 @@ No disk or database is needed: plans stay in each visitor's browser. The app inc
 ```sh
 npm run check
 npm run format:check
-npm audit --omit=dev
+npm audit --audit-level=moderate
 ```
 
-`npm run check` performs strict TypeScript checking, a Vite production build and the Node test suite. See [QUALITY.md](QUALITY.md) for evidence and limits and [EVALUATION.md](EVALUATION.md) for the six-criterion evaluation guide. Backend provider responses are mocked in tests; a live paid model call is not made without a real key.
+`npm run check` performs strict TypeScript checking, a Vite production build, reviewed asset-size budgets and the Node test suite. See [QUALITY.md](QUALITY.md) for evidence and limits and [EVALUATION.md](EVALUATION.md) for the six-criterion evaluation guide. Backend provider responses are mocked in tests; a live paid model call is not made without a real key.
 
 ## Structure
 

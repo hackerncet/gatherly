@@ -28,6 +28,7 @@ export function Modal({
   wide?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const opener = useRef(document.activeElement as HTMLElement | null);
   const id = useId();
   const desc = useId();
   useEffect(() => {
@@ -40,6 +41,10 @@ export function Modal({
       ?.focus();
     return () => {
       dialog?.close();
+      const target = opener.current?.isConnected
+        ? opener.current
+        : document.querySelector<HTMLElement>(".new-event");
+      target?.focus();
     };
   }, []);
   return (
@@ -49,6 +54,32 @@ export function Modal({
       aria-labelledby={id}
       aria-describedby={description ? desc : undefined}
       onCancel={onClose}
+      onKeyDown={(event) => {
+        if (event.key !== "Tab") return;
+        const targets = [
+          ...event.currentTarget.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex="0"]',
+          ),
+        ].filter((target) => target.getClientRects().length > 0);
+        const first = targets[0];
+        const last = targets[targets.length - 1];
+        if (!first || !last) {
+          event.preventDefault();
+          event.currentTarget.focus();
+          return;
+        }
+        const current = event.currentTarget.ownerDocument.activeElement;
+        if (
+          event.shiftKey &&
+          (current === first || current === event.currentTarget)
+        ) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && current === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }}
       onClick={(e) => {
         if (e.target !== e.currentTarget) return;
         const box = e.currentTarget.getBoundingClientRect();

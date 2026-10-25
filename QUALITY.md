@@ -39,8 +39,11 @@ This section is updated as the observed checks complete.
 - [x] Backup export downloaded and parsed successfully: completed task, recorded payment, vendor check, confirmed RSVP and saved ideas were all preserved.
 - [x] Backup recovery, invalid import, version and duplicate-ID rejection (automated storage tests).
 - [x] Visible text contrast check passed on all eight desktop views.
-- [ ] Live Render deployment smoke test — to be verified after deployment.
-- [ ] Native mobile-device and screen-reader testing — responsive CSS and semantic controls are implemented; these device checks were not performed.
+- [x] Live Render deployment: service reached `live`; homepage and `/api/health` returned HTTP 200. `/api/models` returned a live catalog with 467 text-capable models at the check.
+- [x] Eight views checked in responsive browser frames at nominal widths 320, 390 and 768 px (24 layout checks): no document-level horizontal overflow. Tables retain their own keyboard-focusable scroll regions.
+- [x] Maximum allowed budget (1,000,000,000 currency units) checked at the narrow viewport: full amount remained available without page overflow.
+- [x] Modal keyboard wrapping checked across 12 consecutive Tab stops; Escape closes the dialog and focus returns to the invoking control. Internal dialog-padding clicks keep it open.
+- [ ] Physical mobile-device, touch and screen-reader testing — responsive frames are layout checks, not a substitute for these checks.
 
 ## Limits and honest scope
 
@@ -50,13 +53,22 @@ Accessibility review is not a full assistive-technology certification. Responsiv
 
 ## Publishing state
 
-The owner has confirmed the `hackerncet/gatherly` GitHub repository and the expressfreefire Render account. Source publication and live deployment verification are in progress.
+- Source: https://github.com/hackerncet/gatherly (branch `main`).
+- Live app: https://gatherly-qx5g.onrender.com.
+- GitHub Actions run `40192450378` passed the initial complete 54-test implementation. Further pushes run the same checks plus the new asset-size gate and full dependency audit.
+- Render runs the app on its free Node web-service plan in Singapore and automatically deploys changes from `main`. The service uses Render’s default TCP readiness probe; `/api/health` was additionally verified over HTTPS.
+- HTTPS responses include the app’s same-origin CSP, HSTS and no-store API policy. Attempts to fetch `/.env` and `/server/app.mjs` returned 404.
+- The server contains only the requested dummy OpenRouter key and access code. Live completions remain disabled until the owner replaces both; the planning workspace and starter generation work immediately.
 
 ## Improvements in this review
 
 - Added task editing and an explicit option to shift unfinished deadlines when the event date changes. Completed task dates and payment records are preserved.
-- Added lazy loading for secondary views. The initial JavaScript bundle decreased from 397.49 kB / 119.67 kB gzip to 356.65 kB / 110.37 kB gzip in the local production build. CSS was 57.55 kB / 12.24 kB gzip. These are build measurements, not Core Web Vitals.
+- Added lazy loading for secondary views. The initial JavaScript bundle decreased from 397.49 kB / 119.67 kB gzip to 357.27 kB / 110.57 kB gzip in the local production build. CSS was 57.94 kB / 12.35 kB gzip. These are build measurements, not Core Web Vitals.
 - Added corruption-recovery downloads, duplicate workspace-ID validation, a larger bounded backup import, explicit selector labels, Escape dismissal for search and better modal input focus.
 - Fixed accidental dismissal when clicking a dialog’s internal padding.
 - Added concurrent catalog deduplication, three-request concurrency cap and daily AI attempt cap tests.
 - Audited all dependencies including development dependencies: zero known vulnerabilities reported by `npm audit --audit-level=moderate` at this check.
+
+- Added an explicit first/last keyboard loop and focus restoration for modal dialogs.
+- Fixed hidden table labels escaping their scroll container at narrow widths; added named, focusable table regions and safe wrapping for large currency values.
+- Removed an unnecessary stylesheet import. CI enforces reviewed size budgets of 400 kB / 125 kB gzip for the initial JavaScript entry and 75 kB / 16 kB gzip for CSS.

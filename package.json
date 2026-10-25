@@ -11,8 +11,9 @@
     "build": "tsc --noEmit && vite build",
     "start": "node server/index.mjs",
     "test": "node --test tests/*.test.mjs",
-    "check": "npm run build && npm test",
-    "format:check": "prettier --check src server tests index.html package.json tsconfig.json vite.config.ts"
+    "check": "npm run build && npm run assets:check && npm test",
+    "format:check": "prettier --check src server scripts tests index.html package.json tsconfig.json vite.config.ts",
+    "assets:check": "node scripts/check-assets.mjs"
   },
   "dependencies": {
     "express": "^5.1.0",

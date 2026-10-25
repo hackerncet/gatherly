@@ -160,7 +160,12 @@ export function Guests({
       </div>
       <section className="panel table-panel">
         {guests.length ? (
-          <div className="table-scroll">
+          <div
+            className="table-scroll"
+            role="region"
+            aria-label="Scrollable guest list table"
+            tabIndex={0}
+          >
             <table>
               <caption className="sr-only">Guest list and RSVP status</caption>
               <thead>

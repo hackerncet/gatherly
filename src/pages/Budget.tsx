@@ -138,7 +138,12 @@ export function BudgetPage({
           <span className="muted">{event.budgets.length} categories</span>
         </div>
         {event.budgets.length ? (
-          <div className="table-scroll">
+          <div
+            className="table-scroll"
+            role="region"
+            aria-label="Scrollable budget table"
+            tabIndex={0}
+          >
             <table>
               <caption className="sr-only">
                 Event budget categories and recorded payments

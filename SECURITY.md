@@ -18,7 +18,7 @@ Gatherly is a browser-local planning application with a server-side AI proxy. It
 
 ## Operational checks
 
-Run `npm run check` and `npm audit --omit=dev` before releases. Keep dependencies and the Node runtime patched. Never add real secrets to Git; if one is accidentally committed, revoke it immediately and remove it from history as appropriate.
+Run `npm run check` and `npm audit --audit-level=moderate` before releases. Keep dependencies and the Node runtime patched. Never add real secrets to Git; if one is accidentally committed, revoke it immediately and remove it from history as appropriate.
 
 For a future shared/cloud edition, add an authenticated identity system, tenant-scoped authorization, a database with migrations and backups, distributed limits, retention/deletion controls and independent security testing. Do not represent the current browser-local application as having those capabilities.
 
