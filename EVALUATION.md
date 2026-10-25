@@ -13,10 +13,10 @@ Findings, implementation loop, measured evidence and remaining limits: [IMPROVEM
 | Parameter | Reviewable implementation | Verification |
 | --- | --- | --- |
 | Code Quality | Strict TypeScript across frontend/domain/API, schema-derived contracts, focused provider/client/repository modules, atomic revision checks, lint and formatting | Production-environment CI; strict type check; stale-write and migration tests |
-| Efficiency | Lazy secondary views, cached/deduplicated catalog, immutable fingerprinted assets, revalidated HTML, bounded requests and provider concurrency | Initial JS 114,483 bytes gzip; CSS 12,580 bytes gzip; enforced size gates and cache/concurrency tests |
+| Efficiency | Lazy secondary views, cached/deduplicated catalog, immutable fingerprinted assets, revalidated HTML, bounded requests and provider concurrency | Initial JS 114,500 bytes gzip; CSS 12,580 bytes gzip; enforced size gates and cache/concurrency tests |
 | Accessibility | Native dialogs, keyboard focus/trapping/restoration, skip link, labeled controls, valid landmarks, visible statuses and reduced motion | Structural axe tests across nine views and the full shell; 27 responsive/visible-text contrast checks; physical assistive-technology certification not claimed |
 | Security | Server-only provider key, constant-time private-code comparison, server-validated consent, minimal brief disclosure, streaming byte caps, exact-budget validation, CSP, validated imports and CSV injection protection | Negative HTTP/privacy/consent/origin/rate-limit tests; zero known dependency vulnerabilities at the recorded audit |
-| Testing | 89 Node tests and 20 UI/axe tests; separate enforced core and scoped UI coverage gates | 109 tests pass in GitHub production-environment CI and the Render build; details in the audit |
+| Testing | 94 Node tests and 20 UI/axe tests; separate enforced core and scoped UI coverage gates | 114 tests run in production-environment CI and the Render build; latest verified outcomes are recorded in the audit; details in the audit |
 | Problem Statement Alignment | Three event types, planned/paid budgets, editable timelines, vendor checklists, RSVPs, personalized ideas, model selection, preview, provenance and an event-day guide | Three-event starter/schema checks, preference regressions, UI workflows, agenda persistence, calendar/brief payload tests |
 
 ## Five-minute demonstration

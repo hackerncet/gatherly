@@ -36,11 +36,11 @@ The original analysis and implementation order were written before changes in [I
 5. Real multi-tab workflow: a first-tab draft remained exportable after a second tab saved. Loading the newest workspace retained the second tab's change. The downloaded backup independently contained the first draft and its correct time.
 6. Re-run all checks after the fixes, deploy, verify public health/UI/runtime logs, then document actual provider acceptance separately.
 
-Latest verified production-environment CI and Render runs: **89 Node tests + 20 component/axe tests = 109 passing tests**, with lint, strict types, production build, asset budgets, formatting and full dependency audit passing. The dependency audit reported **zero known vulnerabilities** at this check.
+Latest complete local production-environment run: **94 Node tests + 20 component/axe tests = 114 passing tests**, with lint, strict types, production build, asset budgets, formatting and full dependency audit passing. The dependency audit reported **zero known vulnerabilities** at this check.
 
-The latest core coverage report (server, domain, planning, repository and legacy storage utilities) was **97.43% lines, 92.51% branches, 90.29% functions**. The component coverage gate measures EventForm, Guide, DownloadLink and the typed client; it is not presented as coverage of every UI line. All nine views have structural axe tests. Core minimums are 85% lines/functions and 75% branches. Component minimums are 80% lines/statements/functions and 70% branches. Coverage is bounded evidence, not a competition score.
+The latest core coverage report (server, domain, planning, repository and legacy storage utilities) was **97.51% lines, 93.06% branches, 90.38% functions**. The component coverage gate measures EventForm, Guide, DownloadLink and the typed client; it is not presented as coverage of every UI line. All nine views have structural axe tests. Core minimums are 85% lines/functions and 75% branches. Component minimums are 80% lines/statements/functions and 70% branches. Coverage is bounded evidence, not a competition score.
 
-The measured initial JavaScript is 369,388 bytes / 114,483 bytes gzip; CSS is 59,034 bytes / 12,580 bytes gzip. The initial JavaScript remains under the existing 400 KB / 125 KB gzip limit; CSS remains under 75 KB / 16 KB gzip. Secondary views, including Event guide, load on demand. There are no additional runtime UI libraries or hosted database costs.
+The measured initial JavaScript is 369,431 bytes / 114,500 bytes gzip; CSS is 59,034 bytes / 12,580 bytes gzip. The initial JavaScript remains under the existing 400 KB / 125 KB gzip limit; CSS remains under 75 KB / 16 KB gzip. Secondary views, including Event guide, load on demand. There are no additional runtime UI libraries or hosted database costs.
 
 ## Deployment and AI acceptance
 
@@ -104,3 +104,16 @@ The final provider-fix commit is checked remotely by the same formatting, produc
 Code quality now has checked server/domain contracts, schema-derived types, focused modules, lint and CI. Security retains strict provider/data boundaries and adds consent enforcement, streaming size caps, atomic import handling and redacted diagnostics. Efficiency retains code splitting, bounded concurrency, catalog deduplication and measured asset limits. Testing grew from 54 to 109 meaningful checks with separate coverage gates. Accessibility includes nine-view structural axe coverage, keyboard/focus recovery and 27 responsive/contrast observations. Problem alignment now includes relevant preference-specific suggestions, vendor selection guidance, day-of schedules, risk insights, provenance and portable planning exports.
 
 These are reviewable improvements. They do not substitute for the external evaluator's score, successful live-provider acceptance, a penetration test or full assistive-technology certification.
+
+## Resumed live review — 26 October 2026 (IST)
+
+The environment returned and the local checkout was reconciled with the remote release. Three authenticated synthetic tests using google/gemma-4-26b-a4b-it:free each returned an upstream HTTP 429. A separate openrouter/free wedding test reached the provider but returned finish_reason=length, now diagnosed as output_limit. These are observed capacity/output-limit failures, not failed application authentication, and none are counted as successful plans.
+
+Two implementation gaps were identified and corrected:
+
+- Provider capacity responses now carry an explicit provider_rate_limit category, useful guidance and a normalized Retry-After header. Arbitrary upstream body/header text remains private. Numeric and date delays, malformed values and bounds are regression tested.
+- The catalog now retains bounded reasoning capability metadata. Requests disable optional reasoning only when explicitly advertised as non-mandatory; models that require reasoning use low effort only when advertised. Unknown/unsupported reasoning settings are left untouched. The dynamic free router requests low effort. The 2,200-token cap, 45-second timeout, consent and access controls remain unchanged. There are no automatic retries or paid model substitutions.
+
+The updated local production-environment check passed all **114 tests (94 Node + 20 UI/axe)**, lint, strict types, build and asset budgets. Formatting and dependency audit also pass, with zero known dependency vulnerabilities. Core coverage is **97.51% lines, 93.06% branches, 90.38% functions**; scoped UI coverage remains **93.05% lines, 78.94% branches, 88.88% functions**. Initial JavaScript is **369,431 bytes / 114,500 bytes gzip**. Deployment and post-fix real-provider acceptance are recorded below once observed.
+
+Reasoning controls follow the provider documentation: https://openrouter.ai/docs/guides/best-practices/reasoning-tokens. The controls improve the request configuration; they do not guarantee free-provider capacity or valid output.

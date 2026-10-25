@@ -70,6 +70,76 @@ const mockFetch =
       ),
       { status: 200, headers: { "Content-Type": "application/json" } },
     );
+
+for (const [metadata, control] of [
+  [{ mandatory: false }, { enabled: false }],
+  [{ mandatory: true, supported_efforts: ["low", "high"] }, { effort: "low" }],
+])
+  test(`planner respects advertised reasoning controls ${JSON.stringify(control)}`, () => {
+    let captured;
+    return run(
+      {
+        env,
+        fetchImpl: async (url, options) => {
+          if (url.endsWith("/models"))
+            return new Response(
+              JSON.stringify({
+                data: [
+                  {
+                    ...catalog.data[0],
+                    supported_parameters: ["reasoning"],
+                    reasoning: metadata,
+                  },
+                ],
+              }),
+            );
+          captured = JSON.parse(options.body);
+          return mockFetch()(url);
+        },
+      },
+      async (base) => {
+        const response = await post(base, input, {
+          "x-ai-access-code": env.AI_ACCESS_CODE,
+        });
+        assert.equal(response.status, 200);
+        assert.deepEqual(captured.reasoning, control);
+        assert.equal(captured.max_tokens, 2200);
+      },
+    );
+  });
+
+test("provider capacity errors expose safe retry guidance without provider text", async () => {
+  for (const [header, expected] of [
+    ["120", "120"],
+    ["private retry metadata", "60"],
+  ])
+    await run(
+      {
+        env,
+        fetchImpl: async (url) =>
+          url.endsWith("/models")
+            ? mockFetch()(url)
+            : new Response("private provider body", {
+                status: 429,
+                headers: { "Retry-After": header },
+              }),
+      },
+      async (base) => {
+        const response = await post(base, input, {
+          "x-ai-access-code": env.AI_ACCESS_CODE,
+        });
+        const data = await response.json();
+        assert.equal(response.status, 429);
+        assert.equal(response.headers.get("retry-after"), expected);
+        assert.equal(data.code, "provider_rate_limit");
+        assert.match(data.error, /wait|another model/);
+        assert.doesNotMatch(
+          JSON.stringify(data),
+          /private provider|private retry/,
+        );
+      },
+    );
+});
 test("health exposes readiness without secrets or event records", () =>
   run({ env }, async (base) => {
     const response = await fetch(`${base}/api/health`);

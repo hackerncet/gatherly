@@ -16,6 +16,7 @@ import {
   completionParameters,
   readPlan,
   PlanResponseError,
+  retryAfterSeconds,
   PLANNER_PROMPT,
 } from "./provider.ts";
 const requestSchema = z.object({
@@ -200,14 +201,20 @@ export function createApp({
       });
       if (!response.ok) {
         await response.body?.cancel();
+        if (response.status === 429)
+          return res
+            .status(429)
+            .set(
+              "Retry-After",
+              String(retryAfterSeconds(response.headers.get("retry-after"))),
+            )
+            .json({
+              error:
+                "The AI provider is busy or rate-limited. Please wait before trying again, or choose another model.",
+              code: "provider_rate_limit",
+            });
         return res
-          .status(
-            response.status === 429
-              ? 429
-              : [401, 403].includes(response.status)
-                ? 503
-                : 502,
-          )
+          .status([401, 403].includes(response.status) ? 503 : 502)
           .json({
             error: [401, 403].includes(response.status)
               ? "The AI provider rejected the server credentials. The owner should check the OpenRouter API key."

@@ -12,9 +12,22 @@ export const fallbackModels: Model[] = [
     inputPrice: "0",
     outputPrice: "0",
     supportsJson: true,
+    reasoningMode: "low",
   },
 ];
 export type FetchProvider = typeof fetch;
+
+/** Normalize upstream backoff without forwarding arbitrary provider headers. */
+export function retryAfterSeconds(value: string | null, now = Date.now()) {
+  const seconds =
+    value && /^\d{1,6}$/.test(value)
+      ? Number(value)
+      : Math.ceil((Date.parse(value || "") - now) / 1000);
+  return Number.isFinite(seconds) && seconds > 0
+    ? Math.min(seconds, 86400)
+    : 60;
+}
+
 const providerCatalog = z.object({
   data: z
     .array(
@@ -23,6 +36,12 @@ const providerCatalog = z.object({
         name: z.string().max(300),
         context_length: z.number().nonnegative().optional(),
         supported_parameters: z.array(z.string().max(100)).max(100).optional(),
+        reasoning: z
+          .object({
+            mandatory: z.boolean().optional(),
+            supported_efforts: z.array(z.string().max(50)).max(20).nullish(),
+          })
+          .optional(),
         architecture: z
           .object({ output_modalities: z.array(z.string()).optional() })
           .optional(),
@@ -95,19 +114,29 @@ export function createModelCatalog(fetchImpl: FetchProvider) {
               !m.architecture?.output_modalities ||
               m.architecture.output_modalities.includes("text"),
           )
-          .map((m) => ({
-            id: m.id,
-            name: m.name,
-            free:
-              Number(m.pricing?.prompt) === 0 &&
-              Number(m.pricing?.completion) === 0,
-            contextLength: m.context_length || 0,
-            inputPrice: m.pricing?.prompt || "unknown",
-            outputPrice: m.pricing?.completion || "unknown",
-            supportsJson:
-              m.id === "openrouter/free" ||
-              Boolean(m.supported_parameters?.includes("response_format")),
-          }));
+          .map<Model>((m) => {
+            let reasoningMode: Model["reasoningMode"];
+            if (m.id === "openrouter/free") reasoningMode = "low";
+            else if (m.supported_parameters?.includes("reasoning")) {
+              if (m.reasoning?.mandatory === false) reasoningMode = "off";
+              else if (m.reasoning?.supported_efforts?.includes("low"))
+                reasoningMode = "low";
+            }
+            return {
+              id: m.id,
+              name: m.name,
+              free:
+                Number(m.pricing?.prompt) === 0 &&
+                Number(m.pricing?.completion) === 0,
+              contextLength: m.context_length || 0,
+              inputPrice: m.pricing?.prompt || "unknown",
+              outputPrice: m.pricing?.completion || "unknown",
+              supportsJson:
+                m.id === "openrouter/free" ||
+                Boolean(m.supported_parameters?.includes("response_format")),
+              reasoningMode,
+            };
+          });
         if (!list.length) throw new Error("Empty catalog");
         if (!list.some((m) => m.id === "openrouter/free"))
           list.unshift(fallbackModels[0]);
@@ -176,12 +205,19 @@ export class PlanResponseError extends Error {
 
 /** Provider capabilities are opt-in; unsupported models retain prompt-only mode. */
 export function completionParameters(model: Model) {
-  return model.supportsJson
-    ? {
-        response_format: { type: "json_object" as const },
-        provider: { require_parameters: true },
-      }
-    : {};
+  return {
+    ...(model.supportsJson
+      ? {
+          response_format: { type: "json_object" as const },
+          provider: { require_parameters: true },
+        }
+      : {}),
+    ...(model.reasoningMode === "off"
+      ? { reasoning: { enabled: false } }
+      : model.reasoningMode === "low"
+        ? { reasoning: { effort: "low" as const } }
+        : {}),
+  };
 }
 
 /** Return safe failure categories, never upstream text, reasoning or credentials. */
