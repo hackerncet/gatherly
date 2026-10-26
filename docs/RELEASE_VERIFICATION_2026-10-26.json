@@ -1,0 +1,496 @@
+{
+  "project": "Gatherly",
+  "reviewDate": "2026-10-26",
+  "timezone": "Asia/Kolkata",
+  "externalScore": {
+    "source": "owner-reported PromptWars result before this release",
+    "overall": 96.72,
+    "criteria": {
+      "codeQuality": 88,
+      "security": 99,
+      "efficiency": 100,
+      "testing": 99,
+      "accessibility": 99,
+      "problemStatementAlignment": 100
+    },
+    "newExternalScore": null
+  },
+  "deployedCommit": "25c830faa2a81d3d5b023bf2cb8e9ffad8aa1c72",
+  "deployId": "dep-dbfe33k9v7es73dc6iq0",
+  "deployStatus": "live",
+  "automation": {
+    "command": "NODE_ENV=production npm run check",
+    "coreTests": 117,
+    "uiTests": 45,
+    "totalTests": 162,
+    "coreCoveragePercent": {
+      "lines": 97.89,
+      "branches": 94.57,
+      "functions": 94.03
+    },
+    "completeUiCoverage": {
+      "lines": {
+        "total": 841,
+        "covered": 747,
+        "skipped": 0,
+        "pct": 88.82
+      },
+      "statements": {
+        "total": 907,
+        "covered": 793,
+        "skipped": 0,
+        "pct": 87.43
+      },
+      "functions": {
+        "total": 331,
+        "covered": 282,
+        "skipped": 0,
+        "pct": 85.19
+      },
+      "branches": {
+        "total": 678,
+        "covered": 554,
+        "skipped": 0,
+        "pct": 81.71
+      },
+      "branchesTrue": {
+        "total": 0,
+        "covered": 0,
+        "skipped": 0,
+        "pct": 100
+      }
+    },
+    "dependencyAuditKnownVulnerabilities": 0,
+    "complexityLimit": 20,
+    "typeAwareLint": true,
+    "indexedAccessChecking": true,
+    "uiTestTypeChecking": true,
+    "finalMainRun": 40273098096,
+    "finalMainConclusion": "success"
+  },
+  "codeql": {
+    "suite": "security-and-quality",
+    "strictZeroFindingsGate": true,
+    "findings": 0,
+    "releaseRun": 40272123508,
+    "validationFollowupRun": 40272944484,
+    "rulesSuppressed": 0,
+    "finalMainRun": 40273098096,
+    "finalMainFindings": 0
+  },
+  "efficiency": {
+    "initialJsBytes": 372727,
+    "initialJsGzipBytes": 115982,
+    "cssBytes": 59673,
+    "cssGzipBytes": 12777,
+    "limitsEnforced": true
+  },
+  "liveAi": {
+    "executedAgainstCommit": "2c1cd2ce0cdf9ac07f0b499245a42839ecbc429b",
+    "backendUnchangedInFinalValidationFollowup": true,
+    "service": "OpenRouter",
+    "model": "openai/gpt-4.1-nano",
+    "manualAllowanceUSD": 0.01,
+    "estimatedMaximumTokenChargeUSD": 0.00564,
+    "actualBillQueried": false,
+    "cases": [
+      {
+        "type": "wedding",
+        "status": 200,
+        "source": "ai",
+        "model": "openai/gpt-4.1-nano",
+        "elapsedMs": 11856,
+        "schemaValid": true,
+        "budgetTotal": 60000,
+        "contingency": true,
+        "tasks": 8,
+        "ideas": 3,
+        "vendors": 2,
+        "error": null,
+        "code": null,
+        "contingencyAmount": 6000,
+        "accepted": true,
+        "plan": {
+          "summary": "This synthetic wedding plan in Bengaluru emphasizes accessibility, sustainability, and guest comfort. The plan prioritizes eco-friendly decor, vegan catering, and contingency planning for weather issues.",
+          "budgets": [
+            {
+              "category": "Venue and rentals",
+              "amount": 24000
+            },
+            {
+              "category": "Catering and food",
+              "amount": 15000
+            },
+            {
+              "category": "Decor and accessories",
+              "amount": 9000
+            },
+            {
+              "category": "Accessibility modifications",
+              "amount": 6000
+            },
+            {
+              "category": "Contingency",
+              "amount": 6000
+            }
+          ],
+          "tasks": [
+            {
+              "title": "Book outdoor venue with rain backup",
+              "daysBefore": 60,
+              "category": "Venue"
+            },
+            {
+              "title": "Arrange vegan catering and catering equipment",
+              "daysBefore": 45,
+              "category": "Catering"
+            },
+            {
+              "title": "Design and order reusable decor materials",
+              "daysBefore": 50,
+              "category": "Decor"
+            },
+            {
+              "title": "Organize step-free access pathways and signage",
+              "daysBefore": 40,
+              "category": "Accessibility"
+            },
+            {
+              "title": "Coordinate transportation for guests requiring assistance",
+              "daysBefore": 30,
+              "category": "Transport"
+            },
+            {
+              "title": "Plan and purchase eco-friendly tableware and utensils",
+              "daysBefore": 35,
+              "category": "Decor"
+            },
+            {
+              "title": "Communicate dietary requirements and accessibility info to guests",
+              "daysBefore": 20,
+              "category": "Communication"
+            },
+            {
+              "title": "Prepare rain contingency plan and other safety measures",
+              "daysBefore": 15,
+              "category": "Safety"
+            }
+          ],
+          "ideas": [
+            {
+              "title": "Eco-friendly floral arrangements",
+              "detail": "Use local, seasonal, and sustainable flowers to decorate.",
+              "tag": "Sustainability"
+            },
+            {
+              "title": "Vegan cake with natural ingredients",
+              "detail": "Order a visually appealing vegan cake using organic and locally sourced ingredients.",
+              "tag": "Culinary"
+            },
+            {
+              "title": "Inclusive seating arrangements",
+              "detail": "Design seating that ensures comfort and accessibility for all guests.",
+              "tag": "Accessibility"
+            }
+          ],
+          "vendors": [
+            {
+              "category": "Vegan catering",
+              "requirements": "Must provide vegan menu options, food safety certifications, and eco-friendly service ware."
+            },
+            {
+              "category": "Decor and linen rental",
+              "requirements": "Must offer reusable, eco-friendly decor items, inclusive of rain-resistant outdoor options."
+            }
+          ]
+        }
+      },
+      {
+        "type": "birthday",
+        "status": 200,
+        "source": "ai",
+        "model": "openai/gpt-4.1-nano",
+        "elapsedMs": 11580,
+        "schemaValid": true,
+        "budgetTotal": 60000,
+        "contingency": true,
+        "tasks": 8,
+        "ideas": 3,
+        "vendors": 3,
+        "error": null,
+        "code": null,
+        "contingencyAmount": 6000,
+        "accepted": true,
+        "plan": {
+          "summary": "Organize a joyful outdoor birthday celebration in Bengaluru with accessible, vegan, and sustainable themes, ensuring weather backup and low waste. Carefully plan and allocate the budget for a seamless event experience.",
+          "budgets": [
+            {
+              "category": "Venue",
+              "amount": 16200
+            },
+            {
+              "category": "Catering",
+              "amount": 13500
+            },
+            {
+              "category": "Decor",
+              "amount": 8100
+            },
+            {
+              "category": "Entertainment and Activities",
+              "amount": 5400
+            },
+            {
+              "category": "Equipment and Rentals",
+              "amount": 5400
+            },
+            {
+              "category": "Safety and Accessibility",
+              "amount": 5400
+            },
+            {
+              "category": "Contingency",
+              "amount": 6000
+            }
+          ],
+          "tasks": [
+            {
+              "title": "Book outdoor venue with rain backup",
+              "daysBefore": 60,
+              "category": "Logistics"
+            },
+            {
+              "title": "Arrange vegan catering",
+              "daysBefore": 45,
+              "category": "Catering"
+            },
+            {
+              "title": "Design and order reusable decor",
+              "daysBefore": 30,
+              "category": "Decor"
+            },
+            {
+              "title": "Coordinate accessibility features and step-free access",
+              "daysBefore": 40,
+              "category": "Accessibility"
+            },
+            {
+              "title": "Send invitations to guests and confirm RSVPs",
+              "daysBefore": 20,
+              "category": "Guest Management"
+            },
+            {
+              "title": "Setup waste management and recycling stations",
+              "daysBefore": 15,
+              "category": "Sustainability"
+            },
+            {
+              "title": "Arrange outdoor rain protection and shelter",
+              "daysBefore": 20,
+              "category": "Venue Preparation"
+            },
+            {
+              "title": "Prepare activity plans and entertainment",
+              "daysBefore": 25,
+              "category": "Entertainment"
+            }
+          ],
+          "ideas": [
+            {
+              "title": "Eco-friendly decor theme",
+              "detail": "Use biodegradable and reusable materials to create a vibrant birthday atmosphere.",
+              "tag": "Sustainability"
+            },
+            {
+              "title": "Vegan outdoor food station",
+              "detail": "Set up a dedicated vegan food stall emphasizing healthy, plant-based options.",
+              "tag": "Catering"
+            },
+            {
+              "title": "Interactive eco-awareness activity",
+              "detail": "Engage guests with a fun activity highlighting sustainability and waste reduction.",
+              "tag": "Entertainment"
+            }
+          ],
+          "vendors": [
+            {
+              "category": "Catering",
+              "requirements": "Vegan menu, eco-friendly packaging, allergy considerations"
+            },
+            {
+              "category": "Decor",
+              "requirements": "Recyclable materials, customizable options for eco-themed decor"
+            },
+            {
+              "category": "Event Equipment",
+              "requirements": "Weather-resistant structures, accessible pathways, safety compliance"
+            }
+          ]
+        }
+      },
+      {
+        "type": "community",
+        "status": 200,
+        "source": "ai",
+        "model": "openai/gpt-4.1-nano",
+        "elapsedMs": 11420,
+        "schemaValid": true,
+        "budgetTotal": 60000,
+        "contingency": true,
+        "tasks": 8,
+        "ideas": 3,
+        "vendors": 2,
+        "error": null,
+        "code": null,
+        "contingencyAmount": 6000,
+        "accepted": true,
+        "plan": {
+          "summary": "Organize a community acceptance event in Bengaluru emphasizing accessibility, sustainability, and safety. Ensure all preparations meet guest needs and preferences within the specified budget.",
+          "budgets": [
+            {
+              "category": "Venue and logistics",
+              "amount": 28421
+            },
+            {
+              "category": "Catering",
+              "amount": 14211
+            },
+            {
+              "category": "Decor and ambiance",
+              "amount": 5684
+            },
+            {
+              "category": "Accessibility and safety",
+              "amount": 5684
+            },
+            {
+              "category": "Contingency",
+              "amount": 6000
+            }
+          ],
+          "tasks": [
+            {
+              "title": "Book outdoor venue with rain backup",
+              "daysBefore": 90,
+              "category": "Logistics"
+            },
+            {
+              "title": "Arrange vegan catering with eco-friendly packaging",
+              "daysBefore": 60,
+              "category": "Catering"
+            },
+            {
+              "title": "Design reusable decor aligned with sustainability goals",
+              "daysBefore": 75,
+              "category": "Decor"
+            },
+            {
+              "title": "Coordinate step-free access arrangements and signage",
+              "daysBefore": 80,
+              "category": "Accessibility"
+            },
+            {
+              "title": "Organize safety measures including first aid and weather contingency",
+              "daysBefore": 70,
+              "category": "Safety"
+            },
+            {
+              "title": "Plan transportation options for guests with mobility needs",
+              "daysBefore": 65,
+              "category": "Transportation"
+            },
+            {
+              "title": "Develop waste management and recycling plan",
+              "daysBefore": 55,
+              "category": "Environmental sustainability"
+            },
+            {
+              "title": "Prepare event program and guest engagement activities",
+              "daysBefore": 45,
+              "category": "Program"
+            }
+          ],
+          "ideas": [
+            {
+              "title": "Community mural project",
+              "detail": "Create a mural promoting acceptance and inclusion, involving local artists.",
+              "tag": "Personalized"
+            },
+            {
+              "title": "Interactive storytelling corner",
+              "detail": "Set up a space for sharing stories or testimonials from community members.",
+              "tag": "Personalized"
+            },
+            {
+              "title": "Eco-friendly gift bags",
+              "detail": "Distribute reusable bags with local sustainable products to guests.",
+              "tag": "Personalized"
+            }
+          ],
+          "vendors": [
+            {
+              "category": "Catering",
+              "requirements": "Vegan menu options, compostable packaging, allergy considerations"
+            },
+            {
+              "category": "Decor",
+              "requirements": "Recyclable materials, minimal waste, weather-resistant items"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "browser": {
+    "workspaceRecords": 6,
+    "prePostUpgradeDeepEquality": true,
+    "allFieldsAndSelectionPreserved": true,
+    "allNineViewsLoaded": true,
+    "desktopViewportWidth": 1363,
+    "documentOverflow": false,
+    "calendarDownloadCompleted": true,
+    "calendarEntries": 9,
+    "calendarPayloadMatchesSavedEvent": true,
+    "markdownDownloadCompleted": true,
+    "markdownPayloadMatchesSavedEvent": true,
+    "strictCspChartsRender": true,
+    "validationFocusAndAriaAssociation": true,
+    "finalFriendlyMessageObserved": true,
+    "zoomShortcutHadNoObservableEffect": true,
+    "physicalDeviceOrScreenReaderCertification": false,
+    "finalReloadBackupDeepEquality": true,
+    "preservationComparisonScope": "Schema-validated workspace exports before upgrade and after final deployed reload, including every event field and activeId.",
+    "sampledAppOriginConsoleErrors": 0,
+    "consoleSamplingScope": "Fresh deployed Overview load; three unrelated browser-extension metadata errors excluded by source URL.",
+    "screenshot": "screenshots/gatherly-final-review-2026-10-26.jpg",
+    "screenshotScope": "Fresh browser profile showing the built-in sample wedding; six-event preservation was verified separately by backup comparison."
+  },
+  "security": {
+    "liveHealthVersion": "1.2.0",
+    "strictCspWithoutUnsafeInlineOrEval": true,
+    "permissionsPolicy": true,
+    "apiNoStore": true,
+    "invalidAccessCodeStatus": 401,
+    "secretFileStatus": 404,
+    "runtimeErrorLogsObserved": 0,
+    "runtimeErrorLogSample": {
+      "start": "2026-10-26T05:16:10Z",
+      "end": "2026-10-26T08:15:57.501Z",
+      "type": "app",
+      "level": "error",
+      "results": 0,
+      "hasMore": false
+    }
+  },
+  "limitations": [
+    "No new PromptWars evaluation is available; these checks are not a 100/100 self-score.",
+    "Only the recorded OpenRouter route and three synthetic cases were run.",
+    "Automated axe checks disable JSDOM color-contrast; physical devices and screen readers are not certified.",
+    "No independent penetration or large-scale load certification.",
+    "Browser-local data remains unencrypted and has no account/cloud synchronization."
+  ],
+  "deployFinishedAt": "2026-10-26T05:16:09.80864Z",
+  "deploymentVerifiedAt": "2026-10-26T08:15:57.501Z",
+  "publicUrl": "https://gatherly-qx5g.onrender.com/",
+  "mergedPullRequests": [1, 2]
+}

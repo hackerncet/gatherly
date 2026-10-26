@@ -5,7 +5,7 @@ self-awarded competition score or a certification. The owner's latest supplied
 external result is 96.72 overall: quality 88, security 99, efficiency 100,
 testing 99, accessibility 99 and alignment 100. No deduction annotations were
 supplied. [The final review](docs/FINAL_REVIEW.md) records the reproduced gaps,
-changes and remaining verification. Earlier findings remain in the dated
+changes and verification. Earlier findings remain in the dated
 [improvement audit](IMPROVEMENT_AUDIT.md) and [live baseline](LIVE_AI_AUDIT_2026-10-25.md).
 
 ## Reproduce the checks
@@ -22,10 +22,10 @@ Node HTTP/domain/persistence tests and complete UI/component tests.
 | Core tests                       | 117 passing Node tests                                                    |
 | UI tests                         | 45 passing interaction, hook, recovery and axe tests                      |
 | Core coverage                    | 97.89% lines, 94.57% branches, 94.03% functions                           |
-| Complete UI coverage             | 88.80% lines, 87.41% statements, 81.87% branches, 85.19% functions        |
+| Complete UI coverage             | 88.82% lines, 87.43% statements, 81.71% branches, 85.19% functions        |
 | Indexed-access / type-aware lint | Passed; maximum function complexity 20 enforced                           |
 | Dependency audit                 | Zero known vulnerabilities across production and development dependencies |
-| Initial JavaScript               | 372,629 bytes / 115,930 gzip in the recorded build                        |
+| Initial JavaScript               | 372,727 bytes / 115,982 gzip in the recorded build                        |
 | Stylesheet                       | 59,673 bytes / 12,777 gzip in the recorded build                          |
 
 Core scope is server handlers/provider/allocation and loaded shared/domain/storage
@@ -66,10 +66,20 @@ Render builds run the same production-environment `check` command. The service
 uses its existing automatic deployment from `main`; no secrets, pricing tier,
 provider spending limits or stored workspace format were changed.
 
-Real OpenRouter wedding/birthday/community acceptance from the previous deployed
-release remains documented in [AI acceptance](docs/AI_ACCEPTANCE_2026-10-26.json).
-That earlier evidence is not misrepresented as a new execution of this revision.
-The final review distinguishes new deployed checks from historical checks.
+The deployed application commit `25c830faa2a81d3d5b023bf2cb8e9ffad8aa1c72`
+passed [CI run 40273098096](https://github.com/hackerncet/gatherly/actions/runs/40273098096),
+including CodeQL with zero security-and-quality findings and no suppressed rules.
+Render deployment `dep-dbfe33k9v7es73dc6iq0` is live. All six saved browser events
+and the selected event matched the pre-upgrade export field for field after reload.
+Calendar and Markdown downloads completed and matched the saved event payload.
+
+New authenticated OpenRouter wedding/birthday/community acceptance passed against
+the 1.2 backend. Each generated plan passed the response schema, exact INR 60,000
+allocation and INR 6,000 contingency checks. The final follow-up changed only
+frontend validation wording; the tested backend is identical. The
+[release verification record](docs/RELEASE_VERIFICATION_2026-10-26.json) includes
+the model, synthetic output, commit scope, measurements and limits. Earlier
+[AI acceptance](docs/AI_ACCEPTANCE_2026-10-26.json) remains historical evidence.
 
 ## Limits
 

@@ -1,5 +1,10 @@
 # Gatherly 1.1 — findings, implementation and verification
 
+**Historical release record.** The latest 1.2 review supersedes the current-release
+metrics in this document. See [FINAL_REVIEW.md](docs/FINAL_REVIEW.md),
+[QUALITY.md](QUALITY.md) and the
+[release verification record](docs/RELEASE_VERIFICATION_2026-10-26.json).
+
 Date: 25 October 2026. The owner's external evaluation was 93.51/100: Code Quality 86, Security 98, Efficiency 100, Testing 98, Accessibility 96, Problem Statement Alignment 93. No private evaluator rubric or deduction annotations were supplied. Findings below are independently demonstrated engineering issues and improvements, not invented explanations of that scorer's decisions.
 
 The original analysis and implementation order were written before changes in [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md).
