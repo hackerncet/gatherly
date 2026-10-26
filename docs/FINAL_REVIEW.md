@@ -89,3 +89,9 @@ check recorded below. A disconnected client observed while catalog loading canno
 start a subsequent provider generation; the HTTP regression waits for the server
 to observe the closed connection rather than assuming the network disconnect is
 instantaneous.
+
+The first SARIF gate run exposed a CI integration error: CodeQL's default output
+was `../results`, while the gate expected `results`. The workflow now explicitly
+sets `output: results`. The failed gate was not bypassed or counted as a clean
+scan. GitHub Actions checkout/setup-node/artifact pins were also updated to the
+verified current stable releases, removing Node 20 action deprecation warnings.
