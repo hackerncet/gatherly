@@ -1,0 +1,391 @@
+{
+  "date": "26 October 2026 (IST)",
+  "verifiedAt": "2026-10-25T20:53:53.539Z",
+  "applicationCommit": "1f7223d78aab9fc93988848b6f6868e8b5aabb9c",
+  "endpoint": "https://gatherly-qx5g.onrender.com/api/plan",
+  "method": "POST",
+  "requestAuthentication": "Private access code supplied; its value and all credentials are excluded.",
+  "provider": "OpenRouter",
+  "requestedModel": "openai/gpt-4.1-nano",
+  "mode": "Native JSON Schema with deterministic currency allocation",
+  "manualThreeRequestTokenChargeAllowanceUSD": 0.00564,
+  "actualBilledCost": "Not queried",
+  "limitations": [
+    "Synthetic API acceptance, not a new competition score.",
+    "Free-provider capacity and output limits remain variable.",
+    "AI suggestions require organizer review; local accessibility advice and supplier claims are not certified."
+  ],
+  "cases": [
+    {
+      "brief": {
+        "title": "Verified AI wedding example",
+        "type": "wedding",
+        "date": "2027-03-20",
+        "location": "Bengaluru",
+        "guests": 40,
+        "budget": 60000,
+        "currency": "INR",
+        "preferences": "Step-free access, vegan food, outdoor rain backup, reusable decor and low waste."
+      },
+      "type": "wedding",
+      "status": 200,
+      "source": "ai",
+      "model": "openai/gpt-4.1-nano",
+      "elapsedMs": 12455,
+      "schemaValid": true,
+      "budgetTotal": 60000,
+      "contingency": true,
+      "tasks": 8,
+      "ideas": 3,
+      "vendors": 2,
+      "error": null,
+      "code": null,
+      "contingencyAmount": 6000,
+      "accepted": true,
+      "plan": {
+        "summary": "This synthetic wedding plan prioritizes accessibility, sustainability, and weather contingencies for a memorable outdoor event in Bengaluru. Precise planning ensures a seamless celebration respecting the couple's values and guest needs.",
+        "budgets": [
+          {
+            "category": "Venue & Logistics",
+            "amount": 21600
+          },
+          {
+            "category": "Food & Beverages",
+            "amount": 16200
+          },
+          {
+            "category": "Decor & Sustainability",
+            "amount": 10800
+          },
+          {
+            "category": "Safety & Accessibility",
+            "amount": 5400
+          },
+          {
+            "category": "Contingency",
+            "amount": 6000
+          }
+        ],
+        "tasks": [
+          {
+            "title": "Book outdoor venue with rain backup",
+            "daysBefore": 90,
+            "category": "Venue"
+          },
+          {
+            "title": "Arrange vegan catering with allergy options",
+            "daysBefore": 60,
+            "category": "Catering"
+          },
+          {
+            "title": "Design and order reusable decor items",
+            "daysBefore": 45,
+            "category": "Decor"
+          },
+          {
+            "title": "Organize step-free accessibility measures at the venue",
+            "daysBefore": 45,
+            "category": "Accessibility"
+          },
+          {
+            "title": "Coordinate weather contingency plan including tents and floor mats",
+            "daysBefore": 30,
+            "category": "Logistics"
+          },
+          {
+            "title": "Send invitations emphasizing accessibility and eco-conscious message",
+            "daysBefore": 30,
+            "category": "Invitations"
+          },
+          {
+            "title": "Arrange transportation with ADA compliance if needed",
+            "daysBefore": 30,
+            "category": "Transport"
+          },
+          {
+            "title": "Confirm safety protocols including first aid and fire safety",
+            "daysBefore": 60,
+            "category": "Safety"
+          }
+        ],
+        "ideas": [
+          {
+            "title": "Eco-friendly wedding favors",
+            "detail": "Offer reusable or biodegradable favors that guests can take home.",
+            "tag": "Sustainability"
+          },
+          {
+            "title": "Interactive vegan tasting station",
+            "detail": "Create a fun and engaging Vegan Food tasting station for guests.",
+            "tag": "Experience"
+          },
+          {
+            "title": "Rain dance and outdoor music session",
+            "detail": "Setup an undercover music area where guests can enjoy rain or shine.",
+            "tag": "Entertainment"
+          }
+        ],
+        "vendors": [
+          {
+            "category": "Catering",
+            "requirements": "Vegan menu options, allergen-free, eco-friendly serving ware"
+          },
+          {
+            "category": "Decor",
+            "requirements": "Reusable materials, environmentally safe products, customizable designs"
+          }
+        ]
+      }
+    },
+    {
+      "brief": {
+        "title": "Verified AI birthday example",
+        "type": "birthday",
+        "date": "2027-03-20",
+        "location": "Bengaluru",
+        "guests": 40,
+        "budget": 60000,
+        "currency": "INR",
+        "preferences": "Step-free access, vegan food, outdoor rain backup, reusable decor and low waste."
+      },
+      "type": "birthday",
+      "status": 200,
+      "source": "ai",
+      "model": "openai/gpt-4.1-nano",
+      "elapsedMs": 11130,
+      "schemaValid": true,
+      "budgetTotal": 60000,
+      "contingency": true,
+      "tasks": 8,
+      "ideas": 3,
+      "vendors": 3,
+      "error": null,
+      "code": null,
+      "contingencyAmount": 6000,
+      "accepted": true,
+      "plan": {
+        "summary": "A sustainable outdoor birthday celebration in Bengaluru with a focus on accessibility, vegan offerings, and eco-friendly decor. The plan ensures seamless preparation while respecting budget and environmental commitments.",
+        "budgets": [
+          {
+            "category": "Venue",
+            "amount": 21600
+          },
+          {
+            "category": "Catering",
+            "amount": 13500
+          },
+          {
+            "category": "Decor",
+            "amount": 8100
+          },
+          {
+            "category": "Accessibility",
+            "amount": 5400
+          },
+          {
+            "category": "Entertainment",
+            "amount": 5400
+          },
+          {
+            "category": "Contingency",
+            "amount": 6000
+          }
+        ],
+        "tasks": [
+          {
+            "title": "Book outdoor event space with rain backup",
+            "daysBefore": 30,
+            "category": "Logistics"
+          },
+          {
+            "title": "Arrange vegan catering with allergy considerations",
+            "daysBefore": 25,
+            "category": "Catering"
+          },
+          {
+            "title": "Order reusable decor and eco-friendly tableware",
+            "daysBefore": 20,
+            "category": "Decor"
+          },
+          {
+            "title": "Coordinate step-free access arrangements and signage",
+            "daysBefore": 15,
+            "category": "Accessibility"
+          },
+          {
+            "title": "Create a contingency plan for weather issues",
+            "daysBefore": 10,
+            "category": "Planning"
+          },
+          {
+            "title": "Send invitations with RSVP for headcount confirmation",
+            "daysBefore": 28,
+            "category": "Communication"
+          },
+          {
+            "title": "Set up waste separation and recycling stations",
+            "daysBefore": 10,
+            "category": "Environmental Care"
+          },
+          {
+            "title": "Arrange entertainment suitable for outdoor setting",
+            "daysBefore": 20,
+            "category": "Entertainment"
+          }
+        ],
+        "ideas": [
+          {
+            "title": "Plant a tree as a memorable gift",
+            "detail": "Include a sapling to be planted on-site or donated, promoting sustainability.",
+            "tag": "eco-friendly"
+          },
+          {
+            "title": "Themed reusable decor",
+            "detail": "Use decorations that guests can reuse or take home, like fabric banners or personalized eco-bags.",
+            "tag": "eco-conscious"
+          },
+          {
+            "title": "Vegan dessert station",
+            "detail": "Offer a variety of vegan sweets to delight guests and align with dietary preferences.",
+            "tag": "vegan"
+          }
+        ],
+        "vendors": [
+          {
+            "category": "Catering",
+            "requirements": "Vegan menu options, allergy consideration, locally sourced ingredients"
+          },
+          {
+            "category": "Decor",
+            "requirements": "Reusable decor items, eco-friendly materials, accessible installation"
+          },
+          {
+            "category": "Venue",
+            "requirements": "Step-free access, outdoor with rain backup, inclusive facilities"
+          }
+        ]
+      }
+    },
+    {
+      "brief": {
+        "title": "Verified AI community example",
+        "type": "community",
+        "date": "2027-03-20",
+        "location": "Bengaluru",
+        "guests": 40,
+        "budget": 60000,
+        "currency": "INR",
+        "preferences": "Step-free access, vegan food, outdoor rain backup, reusable decor and low waste."
+      },
+      "type": "community",
+      "status": 200,
+      "source": "ai",
+      "model": "openai/gpt-4.1-nano",
+      "elapsedMs": 12233,
+      "schemaValid": true,
+      "budgetTotal": 60000,
+      "contingency": true,
+      "tasks": 8,
+      "ideas": 3,
+      "vendors": 2,
+      "error": null,
+      "code": null,
+      "contingencyAmount": 6000,
+      "accepted": true,
+      "plan": {
+        "summary": "This event promotes synthetic community acceptance with a focus on accessibility, sustainability, and outdoor readiness in Bengaluru. The plan ensures a smooth, inclusive, and eco-friendly gathering while adhering to the specified budget.",
+        "budgets": [
+          {
+            "category": "Venue and Rentals",
+            "amount": 21000
+          },
+          {
+            "category": "Catering",
+            "amount": 18000
+          },
+          {
+            "category": "Decor and Materials",
+            "amount": 9000
+          },
+          {
+            "category": "Safety and Accessibility",
+            "amount": 6000
+          },
+          {
+            "category": "Contingency",
+            "amount": 6000
+          }
+        ],
+        "tasks": [
+          {
+            "title": "Finalize venue with step-free access and rain backup",
+            "daysBefore": 60,
+            "category": "Venue"
+          },
+          {
+            "title": "Confirm vegan catering with reusable, low-waste options",
+            "daysBefore": 45,
+            "category": "Catering"
+          },
+          {
+            "title": "Arrange outdoor shelter and rain protection equipment",
+            "daysBefore": 30,
+            "category": "Logistics"
+          },
+          {
+            "title": "Order reusable decor and eco-friendly supplies",
+            "daysBefore": 40,
+            "category": "Decor"
+          },
+          {
+            "title": "Design and print accessible event signage",
+            "daysBefore": 30,
+            "category": "Signage"
+          },
+          {
+            "title": "Coordinate transportation access for guests with mobility needs",
+            "daysBefore": 35,
+            "category": "Accessibility"
+          },
+          {
+            "title": "Create and distribute environmentally conscious invitations",
+            "daysBefore": 20,
+            "category": "Communication"
+          },
+          {
+            "title": "Arrange safety measures including first aid and crowd control",
+            "daysBefore": 25,
+            "category": "Safety"
+          }
+        ],
+        "ideas": [
+          {
+            "title": "Community mural creation",
+            "detail": "Engage guests in creating a mural that celebrates community acceptance using recyclable paints.",
+            "tag": "interactive"
+          },
+          {
+            "title": "Eco-friendly photo booth",
+            "detail": "Set up a photo booth with reusable props and digital sharing to minimize waste.",
+            "tag": "sustainability"
+          },
+          {
+            "title": "Story-sharing circle",
+            "detail": "Organize a circle where guests share personal stories about community and acceptance in a safe, supportive environment.",
+            "tag": "engagement"
+          }
+        ],
+        "vendors": [
+          {
+            "category": "Catering",
+            "requirements": "Vegan options, reusable tableware, minimal packaging, allergy considerations"
+          },
+          {
+            "category": "Decor and Rentals",
+            "requirements": "Eco-friendly materials, reusability, no single-use plastics"
+          }
+        ]
+      }
+    }
+  ]
+}

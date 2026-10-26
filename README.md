@@ -98,3 +98,7 @@ tests/           Domain, API, concurrency, persistence, component and axe tests
 ```
 
 See [SECURITY.md](SECURITY.md) for trust boundaries, deployment assumptions and operational guidance.
+
+## Verified live AI acceptance
+
+The deployed version passed authenticated wedding, birthday and community generation using GPT-4.1 nano through OpenRouter. Each synthetic plan contained eight tasks, three ideas, generic vendor guidance, an exact INR 60,000 allocation and INR 6,000 contingency. [Captured requests/results](docs/AI_ACCEPTANCE_2026-10-26.json) and the [full audit](IMPROVEMENT_AUDIT.md) document the provider, limits, earlier failures and testing boundaries. These results establish the tested route's behavior; they are not an external competition score or a guarantee for every catalog model.

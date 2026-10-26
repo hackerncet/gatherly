@@ -4,7 +4,7 @@
 
 “Create a GenAI-powered planning assistant that helps users organize weddings, birthdays, and community events with budgets, timelines, vendor checklists, and personalized ideas.”
 
-Gatherly implements this as a responsive personal planning application with a same-origin AI API. It provides a clearly identified starter mode and live OpenRouter generation protected by server credentials, a private access code and explicit consent. Live configuration is enabled; successful real-provider generation after the latest fix remains unverified.
+Gatherly implements this as a responsive personal planning application with a same-origin AI API. It provides a clearly identified starter mode and live OpenRouter generation protected by server credentials, a private access code and explicit consent. Live configuration is enabled. Authenticated real-provider tests passed for wedding, birthday and community briefs using GPT-4.1 nano through OpenRouter; see the captured acceptance evidence. Free-provider capacity remains variable.
 
 Findings, implementation loop, measured evidence and remaining limits: [IMPROVEMENT_AUDIT.md](IMPROVEMENT_AUDIT.md). The original analysis is preserved in [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md). Earlier baseline: [LIVE_AI_AUDIT_2026-10-25.md](LIVE_AI_AUDIT_2026-10-25.md).
 
@@ -45,6 +45,6 @@ Findings, implementation loop, measured evidence and remaining limits: [IMPROVEM
 
 No private PromptWars rubric, deduction annotations or fresh external result were supplied. This document maps the requested parameters to observable implementation and evidence; it does not invent a 98/100 or 100/100 result.
 
-The audit records the failed initial real-provider run and the missing post-fix acceptance result. Calendar/Markdown payload and link tests pass, but the cloud browser did not confirm download completion for those file types. These are not counted as successful end-to-end acceptance tests.
+The audit preserves the failed earlier real-provider runs and the final three passing real-provider cases, with full credential-free evidence in [AI_ACCEPTANCE_2026-10-26.json](docs/AI_ACCEPTANCE_2026-10-26.json). Calendar/Markdown payload and link tests pass, but the cloud browser did not confirm download completion for those file types. These are not counted as successful end-to-end acceptance tests.
 
 The app stores plans locally in the browser. It does not claim cloud collaboration, account authentication, actual vendor booking, automated messaging, payment processing, full WCAG certification, independent penetration testing or large-scale load-test certification.

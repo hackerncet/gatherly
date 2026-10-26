@@ -4,6 +4,8 @@ Date: 25 October 2026. The owner's external evaluation was 93.51/100: Code Quali
 
 The original analysis and implementation order were written before changes in [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md).
 
+**Current verified release:** application commit `1f7223d78aab9fc93988848b6f6868e8b5aabb9c`, GitHub CI run `40232471961` SUCCESS, and Render deploy `dep-dbf6m2mk1f9s73fvhbmg` live. All 126 automated tests pass. The final authenticated real-provider matrix passed for wedding, birthday and community briefs. Earlier pending/failed results below are historical and are superseded by the final acceptance section.
+
 ## Findings and changes
 
 | Finding | Change | Evidence / acceptance |
@@ -131,3 +133,23 @@ Compatible endpoints receive a native strict JSON Schema derived from the same b
 The live catalog also revealed negative variable-price markers and 19 legitimate aliases beginning with ~ that the old model regex rejected. Prices are now normalized and independently guarded in the UI; variable/unknown prices cannot become negative dollar amounts or zero-cost claims. Model IDs remain bounded and must match the catalog; they are JSON data sent to the fixed provider endpoint, never interpolated into URLs.
 
 The revised production-environment check passes **126 tests (105 Node + 21 UI/axe)**. The allocation module has 100% line, branch and function coverage; core overall coverage is **97.67% lines, 93.55% branches, 91.23% functions**. UI scoped coverage is unchanged. Regression tests cover exact totals, proportional/tie rounding, invalid provider budgets, native schema routing, aliases, price normalization and the visible allocation explanation. Initial JavaScript is **369,462 bytes / 114,519 bytes gzip**; CSS is unchanged. Live acceptance of this revision is recorded after deployment below.
+
+## Final real-provider acceptance — 26 October 2026 (IST)
+
+Evidence: [AI_ACCEPTANCE_2026-10-26.json](docs/AI_ACCEPTANCE_2026-10-26.json). These were authenticated HTTP requests to the deployed `/api/plan`, using the real server-side OpenRouter key and explicit consent. The tested route was `openai/gpt-4.1-nano`, with native strict JSON Schema and deterministic application currency allocation. No credentials, private access codes, guest records or vendor contacts appear in the evidence.
+
+| Brief | HTTP / source | Model | Tasks | Ideas | Vendor categories | Allocation | Contingency | Elapsed |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Wedding | 200 / ai | openai/gpt-4.1-nano | 8 | 3 | 2 | INR 60,000 | INR 6,000 | 12,455 ms |
+| Birthday | 200 / ai | openai/gpt-4.1-nano | 8 | 3 | 3 | INR 60,000 | INR 6,000 | 11,130 ms |
+| Community | 200 / ai | openai/gpt-4.1-nano | 8 | 3 | 2 | INR 60,000 | INR 6,000 | 12,233 ms |
+
+All three plans passed the shared application schema, exact-total and reserve checks, and the minimum task/idea/vendor acceptance requirements. Content review found practical references to step-free access, vegan food, rain backup and reusable/low-waste materials, with event-specific ideas and generic vendor requirements. These remain suggestions: local accessibility terminology, supplier statements, safety and availability need organizer review. One wedding suggestion referred to a foreign accessibility compliance label; it is not treated as a verified local requirement.
+
+The successful three-request round had a conservative published token-price allowance of USD 0.00564, below USD 0.01, excluding unused add-ons; actual billed cost was not queried. An earlier manual round used the same allowance and is recorded as failed. The app does not automatically switch users to a paid route or retry a paid generation. Free-provider capacity and output limits remain variable; the three successful calls do not establish that every listed route works.
+
+GitHub CI: https://github.com/hackerncet/gatherly/actions/runs/40232471961 — SUCCESS. The deployed application commit is `1f7223d78aab9fc93988848b6f6868e8b5aabb9c`; Render deploy `dep-dbf6m2mk1f9s73fvhbmg` became live at 2026-10-25T20:49:14Z. Its build passed all 126 tests.
+
+The current browser exported a valid three-event JSON backup. A merged six-event workspace was schema-validated locally and confirmed to preserve all three original records while adding the three generated plans. The cloud-browser file-chooser action was interrupted before its resulting UI state could be observed, so that final browser import/persistence check is not yet counted as passed. Earlier recorded persistence, conflict recovery, agenda and backup tests remain valid. No additional provider requests are needed to preserve the already captured real-AI acceptance results.
+
+No new PromptWars score has been issued. The verified improvements and evidence are ready for external reevaluation; 98/100 or 100/100 can only be established by that evaluator.
