@@ -66,14 +66,15 @@ Render builds run the same production-environment `check` command. The service
 uses its existing automatic deployment from `main`; no secrets, pricing tier,
 provider spending limits or stored workspace format were changed.
 
-The latest local 1.3 checks are recorded in the [code quality review](docs/CODE_QUALITY_REVIEW.md).
-GitHub CI and deployed results will be recorded there after release. The earlier
-1.2 application commit `25c830faa2a81d3d5b023bf2cb8e9ffad8aa1c72`
-passed [CI run 40273098096](https://github.com/hackerncet/gatherly/actions/runs/40273098096),
-including CodeQL with zero security-and-quality findings and no suppressed rules.
-Render deployment `dep-dbfe33k9v7es73dc6iq0` is live. All six saved browser events
-and the selected event matched the pre-upgrade export field for field after reload.
-Calendar and Markdown downloads completed and matched the saved event payload.
+Application commit `743f96a18a13f1f73aff9bdb48768f7146f57df2` passed
+[CI run 40298268244](https://github.com/hackerncet/gatherly/actions/runs/40298268244),
+including 182 tests, architecture checks and CodeQL with zero security-and-quality
+findings. Render deployment `dep-dbfhkqdg1s2s73abqt90` is live with health 1.3.0.
+Browser checks opened/cancelled all six editors, loaded all nine views and verified
+field-associated validation plus forward/reverse dialog focus wrapping. Workspace
+exports before deployment and after all checks matched exactly, including all
+three events and selection. Current [verification data](docs/CODE_QUALITY_VERIFICATION_2026-10-26.json)
+and [review](docs/CODE_QUALITY_REVIEW.md) record the scope and limits.
 
 Recorded authenticated OpenRouter wedding/birthday/community acceptance passed against
 the 1.2 backend. Each generated plan passed the response schema, exact INR 60,000

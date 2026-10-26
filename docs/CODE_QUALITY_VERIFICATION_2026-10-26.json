@@ -1,0 +1,213 @@
+{
+  "project": "Gatherly",
+  "release": "1.3.0",
+  "reviewDate": "2026-10-26",
+  "timezone": "Asia/Kolkata",
+  "externalCompetitionScore": {
+    "ownerReportedPreviousCodeQuality": 88,
+    "newScore": null,
+    "reason": "No new external PromptWars evaluation has been supplied."
+  },
+  "source": {
+    "pullRequest": "https://github.com/hackerncet/gatherly/pull/3",
+    "candidateCommit": "7e8c6f77122449475dd2c1d2a2356abd4c4a2f15",
+    "deployedCommit": "743f96a18a13f1f73aff9bdb48768f7146f57df2",
+    "tree": "2ea716fc632d39386b690a1ac759296e947f17f6"
+  },
+  "ci": {
+    "pullRequestRun": 40297923638,
+    "mainRun": 40298268244,
+    "releaseChecks": "success",
+    "codeql": "success",
+    "codeqlSecurityAndQualityFindings": 0,
+    "codeqlRuleSuppressionsAdded": 0
+  },
+  "deployment": {
+    "platform": "Render",
+    "service": "gatherly",
+    "deployId": "dep-dbfhkqdg1s2s73abqt90",
+    "status": "live",
+    "finishedAt": "2026-10-26T09:18:09.291782Z",
+    "url": "https://gatherly-qx5g.onrender.com/",
+    "health": {
+      "status": "ok",
+      "aiEnabled": true,
+      "ai": {
+        "enabled": true,
+        "keyConfigured": true,
+        "accessConfigured": true
+      },
+      "storage": "browser-local",
+      "version": "1.3.0"
+    }
+  },
+  "automation": {
+    "command": "NODE_ENV=production npm run check",
+    "exitCode": 0,
+    "coreTests": 127,
+    "uiTests": 55,
+    "totalTests": 182,
+    "skipped": 0,
+    "cancelled": 0,
+    "knownDependencyVulnerabilities": 0,
+    "coreCoveragePercent": {
+      "lines": 97.76,
+      "branches": 95.01,
+      "functions": 93.84
+    },
+    "completeUiCoveragePercent": {
+      "lines": 91.21,
+      "statements": 90.55,
+      "branches": 84.72,
+      "functions": 89.55
+    },
+    "uiCoverageExcludes": ["src/main.tsx"],
+    "coreMinimumPercent": {
+      "lines": 95,
+      "branches": 90,
+      "functions": 90
+    },
+    "uiMinimumPercent": {
+      "lines": 85,
+      "statements": 85,
+      "branches": 80,
+      "functions": 80
+    }
+  },
+  "codeQuality": {
+    "strictTypeScript": true,
+    "indexedAccessChecks": true,
+    "exactOptionalPropertyTypes": true,
+    "explicitReturnPaths": true,
+    "verbatimModuleSyntax": true,
+    "typeAwareLint": true,
+    "consistentTypeImports": true,
+    "unnecessaryConditionChecks": true,
+    "maximumFunctionComplexity": 20,
+    "architectureModulesChecked": 63,
+    "architectureViolations": 0,
+    "runtimeCycles": 0,
+    "productionDomainBarrelImports": 0,
+    "recordPagesBeforeLines": 1818,
+    "recordPagesAfterLines": 1112,
+    "recordSpecificEditors": 6,
+    "explicitCommandResults": true,
+    "functionalCurrentStateChanges": true,
+    "schemaDerivedModelAndEventTypes": true,
+    "sharedCollectionLimits": true
+  },
+  "assets": {
+    "initialJavaScriptBytes": 374727,
+    "initialJavaScriptGzipBytes": 116732,
+    "cssBytes": 59673,
+    "cssGzipBytes": 12777,
+    "existingBudgetsPass": true,
+    "newRuntimePackages": 0
+  },
+  "browser": {
+    "views": [
+      {
+        "overflow": false,
+        "title": "Budget · Gatherly",
+        "width": 1363
+      },
+      {
+        "overflow": false,
+        "title": "Timeline · Gatherly",
+        "width": 1363
+      },
+      {
+        "overflow": false,
+        "title": "Vendors · Gatherly",
+        "width": 1363
+      },
+      {
+        "overflow": false,
+        "title": "Guest list · Gatherly",
+        "width": 1363
+      },
+      {
+        "overflow": false,
+        "title": "Inspiration · Gatherly",
+        "width": 1363
+      },
+      {
+        "overflow": false,
+        "title": "Event guide · Gatherly",
+        "width": 1363
+      },
+      {
+        "overflow": false,
+        "title": "AI planning studio · Gatherly",
+        "width": 1363
+      },
+      {
+        "overflow": false,
+        "title": "Settings & data · Gatherly",
+        "width": 1363
+      },
+      {
+        "overflow": false,
+        "title": "Overview · Gatherly",
+        "width": 1363
+      }
+    ],
+    "editorsOpenedAndCancelled": [
+      "budget",
+      "timeline",
+      "vendors",
+      "guests",
+      "ideas",
+      "agenda"
+    ],
+    "validation": {
+      "invalidDraftRetained": true,
+      "fieldFocused": true,
+      "ariaInvalid": true,
+      "errorAssociated": true,
+      "openerRestored": true
+    },
+    "modalKeyboard": {
+      "forwardWrap": true,
+      "reverseWrap": true
+    },
+    "catalogModels": 467,
+    "consoleSample": {
+      "size": 50,
+      "applicationOriginErrors": 0,
+      "extensionErrors": 50
+    },
+    "beforeAfterDeploymentWorkspaceDeepEquality": true,
+    "afterAllCancelledDraftsWorkspaceDeepEquality": true,
+    "workspaceRecords": 3,
+    "activeSelectionPreserved": true,
+    "earlierSixEventBackupAcceptedByCurrentSchema": true,
+    "screenshot": "screenshots/gatherly-code-quality-2026-10-26.jpg"
+  },
+  "applicationErrorLogSample": {
+    "start": "2026-10-26T09:18:10Z",
+    "end": "2026-10-26T09:26:13.417Z",
+    "level": "error",
+    "type": "app",
+    "entries": 0,
+    "hasMore": false
+  },
+  "preservedBoundaries": {
+    "workspaceFormatVersion": 1,
+    "browserLocalStorage": true,
+    "openrouterCredentialsChanged": false,
+    "providerLimitsChanged": false,
+    "strictLiveCsp": true,
+    "permissionsPolicy": true,
+    "newPaidAiGenerationExecuted": false,
+    "previousPaidAcceptance": "RELEASE_VERIFICATION_2026-10-26.json"
+  },
+  "limitations": [
+    "Command acceptance represents an in-memory edit and queued save; IndexedDB persistence has its own saved/unsaved status.",
+    "Browser verification opened/cancelled six editors and checked validation; successful/rejected mutation flows were exercised in automated interaction tests.",
+    "The console result describes the most recent 50 error entries; those entries were all browser-extension metadata errors.",
+    "No fresh paid-provider matrix was run for this code-quality refactor.",
+    "Automated axe checks exclude JSDOM color contrast; no physical device, screen-reader, penetration or large-scale load certification.",
+    "No new external competition score is claimed."
+  ]
+}

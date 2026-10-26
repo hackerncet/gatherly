@@ -75,10 +75,28 @@ package, database service or paid infrastructure was added.
 
 ## Release verification
 
-The implementation is prepared on `improve/code-quality-architecture` for GitHub
-CI's production checks and independent zero-findings CodeQL gate, then the
-existing Render automatic deployment and browser/API verification. Actual
-release identifiers and observations will be recorded after completion.
+The implementation is merged in [pull request #3](https://github.com/hackerncet/gatherly/pull/3).
+Application commit `743f96a18a13f1f73aff9bdb48768f7146f57df2` passed
+[main-branch CI 40298268244](https://github.com/hackerncet/gatherly/actions/runs/40298268244):
+182 tests, architecture/type/lint/build/asset checks, zero known dependency
+vulnerabilities and CodeQL with zero security-and-quality findings. The preceding
+PR run `40297923638` passed the same gates before merge.
+
+Render deployment `dep-dbfhkqdg1s2s73abqt90` is live and health reports **1.3.0**
+with AI enabled. All nine views loaded with correct titles and no horizontal
+overflow at the recorded 1,363-pixel viewport. All six editors opened and were
+cancelled. The budget's invalid draft stayed open, with focused/associated field
+validation; cancel restored its opener. Real-browser forward/reverse Tab tests
+wrapped within the extracted native dialog. The live catalog returned 467 text
+models. None of these checks submitted a paid generation.
+
+Schema-validated workspace exports before deployment, after reload and after all
+cancelled drafts were deeply equal: all three events and the selected event were
+preserved exactly. The earlier six-event backup also passed the current schema.
+The sampled post-deploy application error logs were empty. The latest 50 browser
+console error entries were all extension metadata errors; none originated from
+Gatherly. See the [machine-readable verification](CODE_QUALITY_VERIFICATION_2026-10-26.json)
+for exact observations, coverage scope, identifiers and limitations.
 
 The last paid real-provider acceptance matrix belongs to 1.2; it is retained in
 [the earlier release record](RELEASE_VERIFICATION_2026-10-26.json). This refactor
@@ -90,3 +108,5 @@ Automated accessibility checks do not establish physical device/screen-reader or
 full WCAG certification. Browser-local storage, vendor booking and cloud-sync
 boundaries remain documented in [SECURITY.md](../SECURITY.md). A fresh PromptWars
 evaluation is required to establish an external score for this release.
+
+![Deployed field validation and preserved draft](screenshots/gatherly-code-quality-2026-10-26.jpg)

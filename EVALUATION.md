@@ -41,6 +41,8 @@ Latest reproduced gaps and verification: [CODE_QUALITY_REVIEW.md](docs/CODE_QUAL
 - There are no automatic paid retries or hidden model substitutions. Token/time, hourly, daily and concurrency limits remain in place.
 - Budget figures are estimates. Prices, availability and local requirements need organizer verification.
 
+The current 1.3 [verification record](docs/CODE_QUALITY_VERIFICATION_2026-10-26.json) records 182 passing tests, a zero-findings CodeQL scan, deployed browser checks and exact workspace preservation.
+
 ## Scoring boundary
 
 No private PromptWars rubric, deduction annotations or fresh external result were supplied. This document maps the requested parameters to observable implementation and evidence; it does not invent a 98/100 or 100/100 result.
