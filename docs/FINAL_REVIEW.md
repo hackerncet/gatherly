@@ -1,4 +1,7 @@
-# Gatherly final review
+# Gatherly 1.2 final review
+
+Historical 1.2 release evidence. The latest maintainability upgrade is documented
+in [CODE_QUALITY_REVIEW.md](CODE_QUALITY_REVIEW.md).
 
 ## Scope and scoring
 

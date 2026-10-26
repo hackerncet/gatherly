@@ -1,5 +1,7 @@
-import { useFormValidation } from "../lib/useFormValidation";
-import { useState, type FormEvent } from "react";
+import { VendorEditor } from "../components/editors/VendorEditor";
+import { useEventRecords } from "../lib/useEventRecords";
+import type { EventPageProps } from "../lib/commands";
+import { useState } from "react";
 import {
   Check,
   ClipboardCheck,
@@ -8,61 +10,20 @@ import {
   Store,
   Trash2,
 } from "lucide-react";
-import { Confirm, Empty, Modal, PageHeading } from "../components/ui";
-import { uid, vendorSchema } from "../lib/domain.ts";
+import { Confirm } from "../components/Confirm";
+import { Empty, PageHeading } from "../components/ui";
 import { money } from "../lib/storage";
-import type { Event, Vendor } from "../lib/types";
 const checks = [
   "Quote received",
   "Availability confirmed",
   "Terms & cancellation reviewed",
   "Booking confirmed",
 ];
-export function Vendors({
-  event,
-  onUpdate,
-  notify,
-}: {
-  event: Event;
-  onUpdate: (e: Event) => void;
-  notify: (s: string) => void;
-}) {
-  const [editing, setEditing] = useState<Vendor | null | false>(false);
+export function Vendors({ event, onUpdate, notify }: EventPageProps) {
+  const records = useEventRecords("vendors", onUpdate, notify);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [filter, setFilter] = useState("all");
-  const validation = useFormValidation();
-  const { error, errorId } = validation;
-  function save(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const f = new FormData(e.currentTarget);
-    const r = validation.parse(
-      vendorSchema,
-      {
-        id: editing ? editing.id : uid(),
-        name: f.get("name"),
-        category: f.get("category"),
-        contact: f.get("contact"),
-        quote: Number(f.get("quote")),
-        status: f.get("status"),
-        notes: f.get("notes"),
-        checklist: editing ? editing.checklist : [false, false, false, false],
-      },
-      e.currentTarget,
-    );
-    if (!r) return;
-    if (!editing && event.vendors.length >= 100) {
-      validation.fail("You can keep up to 100 vendors per event.");
-      return;
-    }
-    onUpdate({
-      ...event,
-      vendors: editing
-        ? event.vendors.map((v) => (v.id === editing.id ? r : v))
-        : [...event.vendors, r],
-    });
-    setEditing(false);
-    notify("Vendor details saved.");
-  }
+
   const vendors = event.vendors.filter(
     (v) => filter === "all" || v.status === filter,
   );
@@ -73,13 +34,7 @@ export function Vendors({
         title="Your dream team, coming together."
         description="Keep real quotes, contacts and the important little checks in one place."
         action={
-          <button
-            className="button primary"
-            onClick={() => {
-              setEditing(null);
-              validation.clear();
-            }}
-          >
+          <button className="button primary" onClick={records.create}>
             <Plus size={17} />
             Add a vendor
           </button>
@@ -137,10 +92,7 @@ export function Vendors({
                   <button
                     className="icon-button"
                     aria-label={`Edit ${v.name}`}
-                    onClick={() => {
-                      setEditing(v);
-                      validation.clear();
-                    }}
+                    onClick={() => records.edit(v)}
                   >
                     <Pencil size={16} />
                   </button>
@@ -170,19 +122,12 @@ export function Vendors({
                       type="checkbox"
                       checked={v.checklist[index]}
                       onChange={() =>
-                        onUpdate({
-                          ...event,
-                          vendors: event.vendors.map((item) =>
-                            item.id === v.id
-                              ? {
-                                  ...item,
-                                  checklist: item.checklist.map((done, j) =>
-                                    j === index ? !done : done,
-                                  ),
-                                }
-                              : item,
+                        records.change(v.id, (current) => ({
+                          ...current,
+                          checklist: current.checklist.map((done, position) =>
+                            position === index ? !done : done,
                           ),
-                        })
+                        }))
                       }
                     />
                     {label}
@@ -199,10 +144,7 @@ export function Vendors({
               title="Great celebrations start with good people"
               description="Add a real vendor to compare quotes and work through your booking checklist."
               action={
-                <button
-                  className="button primary"
-                  onClick={() => setEditing(null)}
-                >
+                <button className="button primary" onClick={records.create}>
                   Add your first vendor
                 </button>
               }
@@ -218,125 +160,20 @@ export function Vendors({
           do not automatically change your budget.
         </p>
       </div>
-      {editing !== false && (
-        <Modal
-          title={editing ? "The vendor details" : "Meet a new team member."}
-          onClose={() => setEditing(false)}
-        >
-          <form onSubmit={save}>
-            <div className="form-grid">
-              <label className="span-2">
-                Vendor or business name
-                <input
-                  name="name"
-                  {...validation.input("name")}
-
-                  required
-                  maxLength={100}
-                  defaultValue={editing?.name}
-                />
-              </label>
-              <label>
-                Category
-                <input
-                  name="category"
-                  {...validation.input("category")}
-                  required
-                  maxLength={80}
-                  defaultValue={editing?.category || "Venue"}
-                  list="vendor-categories"
-                />
-                <datalist id="vendor-categories">
-                  {[
-                    "Venue",
-                    "Catering",
-                    "Photography",
-                    "Decor & flowers",
-                    "Music",
-                    "Cake",
-                    "Equipment",
-                    "Other",
-                  ].map((c) => (
-                    <option key={c}>{c}</option>
-                  ))}
-                </datalist>
-              </label>
-              <label>
-                Status
-                <select
-                  name="status"
-                  {...validation.input("status")}
-                  defaultValue={editing?.status || "shortlisted"}
-                >
-                  <option value="shortlisted">Shortlisted</option>
-                  <option value="contacted">Contacted</option>
-                  <option value="booked">Booked</option>
-                </select>
-              </label>
-              <label className="span-2">
-                Contact details <span className="optional">optional</span>
-                <input
-                  name="contact"
-                  {...validation.input("contact")}
-                  maxLength={180}
-                  defaultValue={editing?.contact}
-                  placeholder="Phone, email or website"
-                />
-              </label>
-              <label className="span-2">
-                Quoted amount ({event.currency})
-                <input
-                  name="quote"
-                  {...validation.input("quote")}
-                  type="number"
-                  min="0"
-                  max="1000000000"
-                  step="1"
-                  required
-                  defaultValue={editing?.quote || 0}
-                />
-              </label>
-              <label className="span-2">
-                Notes
-                <textarea
-                  name="notes"
-                  {...validation.input("notes")}
-                  rows={3}
-                  maxLength={600}
-                  defaultValue={editing?.notes}
-                />
-              </label>
-            </div>
-            {error && (
-              <p className="form-error" id={errorId} role="alert">
-                {error}
-              </p>
-            )}
-            <div className="modal-actions">
-              <button
-                type="button"
-                className="button secondary"
-                onClick={() => setEditing(false)}
-              >
-                Cancel
-              </button>
-              <button className="button primary">Save vendor</button>
-            </div>
-          </form>
-        </Modal>
+      {records.isOpen && (
+        <VendorEditor
+          initial={records.initial}
+          onSave={(record) => records.save(record, "Vendor details updated.")}
+          onClose={records.close}
+          currency={event.currency}
+        />
       )}
       {deleting && (
         <Confirm
           title="Remove this vendor?"
           description="This vendor’s quote, notes and checklist will be deleted. No cancellation message will be sent."
           onClose={() => setDeleting(null)}
-          onConfirm={() => {
-            onUpdate({
-              ...event,
-              vendors: event.vendors.filter((v) => v.id !== deleting),
-            });
-            notify("Vendor removed.");
-          }}
+          onConfirm={() => records.remove(deleting, "Vendor removed.")}
         />
       )}
     </>

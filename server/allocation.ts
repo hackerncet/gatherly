@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { aiPlanSchema, briefSchema } from "../src/lib/domain.ts";
+import { aiPlanSchema, briefSchema } from "../src/lib/schemas.ts";
 
 const reserveCategory = /contingency|reserve|buffer/i;
 export const weightedCategoriesSchema = z

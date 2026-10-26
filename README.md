@@ -1,5 +1,10 @@
 # Gatherly
 
+The 1.3 maintainability upgrade introduces typed functional commands, explicit
+command outcomes, six focused record editors, shared capacities and automatic
+dependency-boundary/cycle checks. See the [code quality review](docs/CODE_QUALITY_REVIEW.md)
+for findings, test coverage, release verification and limits.
+
 Live app: https://gatherly-qx5g.onrender.com · Source: https://github.com/hackerncet/gatherly
 
 A thoughtful GenAI event planning assistant for weddings, birthdays and community events. Plan a budget, build a timeline, organize real vendor quotes, track guests and discover personal touches in one calm workspace.
@@ -84,7 +89,7 @@ npm run check
 npm audit --audit-level=moderate
 ```
 
-`npm run check` performs formatting and type-aware ESLint (including hooks/accessibility and complexity checks), strict TypeScript checking across frontend/shared/server and UI test code, a Vite production build, asset-size budgets, Node integration tests and Vitest component/axe tests with complete UI and core coverage gates. CI also runs CodeQL security-and-quality analysis and retains coverage artifacts. See [IMPROVEMENT_AUDIT.md](IMPROVEMENT_AUDIT.md) for historical findings and [docs/FINAL_REVIEW.md](docs/FINAL_REVIEW.md) for the latest fix loop, [QUALITY.md](QUALITY.md) for evidence and limits and [EVALUATION.md](EVALUATION.md) for the six-criterion evaluation guide. Automated tests use mocked provider responses. Separate real-provider acceptance results and their limits are recorded in the audit.
+`npm run check` performs formatting, dependency-boundary/cycle analysis and type-aware ESLint (including hooks/accessibility and complexity checks), strict TypeScript checking across frontend/shared/server and UI test code, a Vite production build, asset-size budgets, Node integration tests and Vitest component/axe tests with complete UI and core coverage gates. CI also runs CodeQL security-and-quality analysis and retains coverage artifacts. See [IMPROVEMENT_AUDIT.md](IMPROVEMENT_AUDIT.md) for historical findings and [docs/CODE_QUALITY_REVIEW.md](docs/CODE_QUALITY_REVIEW.md) for the latest fix loop, [QUALITY.md](QUALITY.md) for evidence and limits and [EVALUATION.md](EVALUATION.md) for the six-criterion evaluation guide. Automated tests use mocked provider responses. Separate real-provider acceptance results and their limits are recorded in the audit.
 
 ## Structure
 

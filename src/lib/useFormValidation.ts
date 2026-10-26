@@ -31,7 +31,7 @@ export function useFormValidation() {
       control instanceof HTMLInputElement ||
       control instanceof HTMLSelectElement ||
       control instanceof HTMLTextAreaElement
-        ? control.labels?.[0]?.textContent?.trim()
+        ? control.labels?.[0]?.textContent.trim()
         : name;
     setField(name);
     const detail =

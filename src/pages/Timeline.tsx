@@ -1,25 +1,16 @@
-import { useFormValidation } from "../lib/useFormValidation";
-import { useState, type FormEvent } from "react";
+import { TaskEditor } from "../components/editors/TaskEditor";
+import { useEventRecords } from "../lib/useEventRecords";
+import type { EventPageProps } from "../lib/commands";
+import { useState } from "react";
 import { CalendarDays, CheckCheck, Pencil, Plus, Trash2 } from "lucide-react";
-import { Confirm, Empty, Modal, PageHeading } from "../components/ui";
-import { taskSchema, today, uid } from "../lib/domain.ts";
+import { Confirm } from "../components/Confirm";
+import { Empty, PageHeading } from "../components/ui";
+import { today } from "../lib/dates.ts";
 import { dateLabel } from "../lib/storage";
-import type { Event, Task } from "../lib/types";
-export function Timeline({
-  event,
-  onUpdate,
-  notify,
-}: {
-  event: Event;
-  onUpdate: (e: Event) => void;
-  notify: (s: string) => void;
-}) {
+export function Timeline({ event, onUpdate, notify }: EventPageProps) {
+  const records = useEventRecords("tasks", onUpdate, notify);
   const [filter, setFilter] = useState("all");
-  const [adding, setAdding] = useState(false);
-  const [editing, setEditing] = useState<Task | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
-  const validation = useFormValidation();
-  const { error, errorId } = validation;
   const complete = event.tasks.filter((t) => t.done).length;
   const tasks = [...event.tasks]
     .filter((t) =>
@@ -32,35 +23,7 @@ export function Timeline({
             : true,
     )
     .sort((a, b) => a.date.localeCompare(b.date));
-  function add(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const f = new FormData(e.currentTarget);
-    const r = validation.parse(
-      taskSchema,
-      {
-        id: editing?.id || uid(),
-        title: f.get("title"),
-        date: f.get("date"),
-        category: f.get("category"),
-        done: editing?.done || false,
-      },
-      e.currentTarget,
-    );
-    if (!r) return;
-    if (!editing && event.tasks.length >= 300) {
-      validation.fail("You can keep up to 300 tasks per event.");
-      return;
-    }
-    onUpdate({
-      ...event,
-      tasks: editing
-        ? event.tasks.map((task) => (task.id === editing.id ? r : task))
-        : [...event.tasks, r],
-    });
-    setAdding(false);
-    notify(editing ? "Task updated." : "One little step added.");
-    setEditing(null);
-  }
+
   return (
     <>
       <PageHeading
@@ -68,14 +31,7 @@ export function Timeline({
         title="A little closer, every day."
         description="From the big decisions to the final little details. Your plan, at your pace."
         action={
-          <button
-            className="button primary"
-            onClick={() => {
-              setEditing(null);
-              setAdding(true);
-              validation.clear();
-            }}
-          >
+          <button className="button primary" onClick={records.create}>
             <Plus size={17} />
             Add a task
           </button>
@@ -142,12 +98,10 @@ export function Timeline({
                 checked={task.done}
                 aria-label={`Mark ${task.title} ${task.done ? "incomplete" : "complete"}`}
                 onChange={() =>
-                  onUpdate({
-                    ...event,
-                    tasks: event.tasks.map((t) =>
-                      t.id === task.id ? { ...t, done: !t.done } : t,
-                    ),
-                  })
+                  records.change(task.id, (current) => ({
+                    ...current,
+                    done: !current.done,
+                  }))
                 }
               />
               <div className="timeline-task-copy">
@@ -164,11 +118,7 @@ export function Timeline({
               <button
                 className="icon-button"
                 aria-label={`Edit ${task.title}`}
-                onClick={() => {
-                  setEditing(task);
-                  setAdding(true);
-                  validation.clear();
-                }}
+                onClick={() => records.edit(task)}
               >
                 <Pencil size={16} />
               </button>
@@ -193,93 +143,19 @@ export function Timeline({
           />
         )}
       </section>
-      {adding && (
-        <Modal
-          title={editing ? "A little change of plan." : "One little step."}
-          description="Give it a name and a date. We’ll keep it right here."
-          onClose={() => setAdding(false)}
-        >
-          <form onSubmit={add}>
-            <div className="form-grid">
-              <label className="span-2">
-                Task name
-                <input
-                  name="title"
-                  {...validation.input("title")}
-
-                  required
-                  maxLength={180}
-                  placeholder="e.g. Confirm the cake delivery"
-                  defaultValue={editing?.title}
-                />
-              </label>
-              <label>
-                Due date
-                <input
-                  name="date"
-                  {...validation.input("date")}
-                  type="date"
-                  required
-                  defaultValue={editing?.date || today()}
-                />
-              </label>
-              <label>
-                Category
-                <input
-                  name="category"
-                  {...validation.input("category")}
-                  required
-                  maxLength={60}
-                  defaultValue={editing?.category || "Planning"}
-                  list="task-categories"
-                />
-                <datalist id="task-categories">
-                  {[
-                    "Planning",
-                    "Venue",
-                    "Guests",
-                    "Catering",
-                    "Decor",
-                    "Vendors",
-                    "Safety",
-                  ].map((s) => (
-                    <option key={s}>{s}</option>
-                  ))}
-                </datalist>
-              </label>
-            </div>
-            {error && (
-              <p className="form-error" id={errorId} role="alert">
-                {error}
-              </p>
-            )}
-            <div className="modal-actions">
-              <button
-                className="button secondary"
-                type="button"
-                onClick={() => setAdding(false)}
-              >
-                Cancel
-              </button>
-              <button className="button primary">
-                {editing ? "Save task" : "Add task"}
-              </button>
-            </div>
-          </form>
-        </Modal>
+      {records.isOpen && (
+        <TaskEditor
+          initial={records.initial}
+          onSave={(record) => records.save(record, "Task updated.")}
+          onClose={records.close}
+        />
       )}
       {deleting && (
         <Confirm
           title="Remove this task?"
           description="This task and its completion status will be deleted from this event."
           onClose={() => setDeleting(null)}
-          onConfirm={() => {
-            onUpdate({
-              ...event,
-              tasks: event.tasks.filter((t) => t.id !== deleting),
-            });
-            notify("Task removed.");
-          }}
+          onConfirm={() => records.remove(deleting, "Task removed.")}
         />
       )}
     </>

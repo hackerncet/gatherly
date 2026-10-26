@@ -1,5 +1,7 @@
-import { useFormValidation } from "../lib/useFormValidation";
-import { useState, type FormEvent } from "react";
+import { IdeaEditor } from "../components/editors/IdeaEditor";
+import { useEventRecords } from "../lib/useEventRecords";
+import type { EventPageProps } from "../lib/commands";
+import { useState } from "react";
 import {
   Bookmark,
   Flower2,
@@ -8,53 +10,15 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
-import {
-  Botanical,
-  Confirm,
-  Empty,
-  Modal,
-  PageHeading,
-} from "../components/ui";
-import { ideaSchema, uid } from "../lib/domain.ts";
-import type { Event } from "../lib/types";
-export function Inspiration({
-  event,
-  onUpdate,
-  notify,
-}: {
-  event: Event;
-  onUpdate: (e: Event) => void;
-  notify: (s: string) => void;
-}) {
+import { Botanical } from "../components/Botanical";
+import { Confirm } from "../components/Confirm";
+import { Empty, PageHeading } from "../components/ui";
+export function Inspiration({ event, onUpdate, notify }: EventPageProps) {
+  const records = useEventRecords("ideas", onUpdate, notify);
   const [filter, setFilter] = useState("all");
-  const [adding, setAdding] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
-  const validation = useFormValidation();
-  const { error, errorId } = validation;
   const ideas = event.ideas.filter((i) => filter === "all" || i.saved);
-  function add(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const f = new FormData(e.currentTarget);
-    const r = validation.parse(
-      ideaSchema,
-      {
-        id: uid(),
-        title: f.get("title"),
-        detail: f.get("detail"),
-        tag: f.get("tag"),
-        saved: true,
-      },
-      e.currentTarget,
-    );
-    if (!r) return;
-    if (event.ideas.length >= 100) {
-      validation.fail("You can keep up to 100 ideas per event.");
-      return;
-    }
-    onUpdate({ ...event, ideas: [...event.ideas, r] });
-    setAdding(false);
-    notify("Your idea has a home.");
-  }
+
   return (
     <>
       <PageHeading
@@ -62,13 +26,7 @@ export function Inspiration({
         title="A celebration that feels like you."
         description="Thoughtful starting points, personal touches and a space for your own bright ideas."
         action={
-          <button
-            className="button primary"
-            onClick={() => {
-              setAdding(true);
-              validation.clear();
-            }}
-          >
+          <button className="button primary" onClick={records.create}>
             <Plus size={17} />
             Add an idea
           </button>
@@ -121,12 +79,10 @@ export function Inspiration({
                   aria-pressed={idea.saved}
                   aria-label={`${idea.saved ? "Unsave" : "Save"} ${idea.title}`}
                   onClick={() =>
-                    onUpdate({
-                      ...event,
-                      ideas: event.ideas.map((i) =>
-                        i.id === idea.id ? { ...i, saved: !i.saved } : i,
-                      ),
-                    })
+                    records.change(idea.id, (current) => ({
+                      ...current,
+                      saved: !current.saved,
+                    }))
                   }
                 >
                   <Bookmark
@@ -159,70 +115,19 @@ export function Inspiration({
           </div>
         )}
       </div>
-      {adding && (
-        <Modal title="A bright little idea." onClose={() => setAdding(false)}>
-          <form onSubmit={add}>
-            <div className="form-grid">
-              <label className="span-2">
-                Idea title
-                <input
-                  name="title"
-                  {...validation.input("title")}
-                  required
-                  maxLength={160}
-                />
-              </label>
-              <label className="span-2">
-                The details
-                <textarea
-                  name="detail"
-                  {...validation.input("detail")}
-                  required
-                  maxLength={600}
-                  rows={4}
-                />
-              </label>
-              <label className="span-2">
-                Tag
-                <input
-                  name="tag"
-                  {...validation.input("tag")}
-                  required
-                  maxLength={50}
-                  defaultValue="Personal touch"
-                />
-              </label>
-            </div>
-            {error && (
-              <p role="alert" id={errorId} className="form-error">
-                {error}
-              </p>
-            )}
-            <div className="modal-actions">
-              <button
-                className="button secondary"
-                type="button"
-                onClick={() => setAdding(false)}
-              >
-                Cancel
-              </button>
-              <button className="button primary">Save idea</button>
-            </div>
-          </form>
-        </Modal>
+      {records.isOpen && (
+        <IdeaEditor
+          initial={records.initial}
+          onSave={(record) => records.save(record, "Your idea has a home.")}
+          onClose={records.close}
+        />
       )}
       {deleting && (
         <Confirm
           title="Let this idea go?"
           description="This idea will be removed from your event’s inspiration board."
           onClose={() => setDeleting(null)}
-          onConfirm={() => {
-            onUpdate({
-              ...event,
-              ideas: event.ideas.filter((i) => i.id !== deleting),
-            });
-            notify("Idea removed.");
-          }}
+          onConfirm={() => records.remove(deleting, "Idea removed.")}
         />
       )}
     </>

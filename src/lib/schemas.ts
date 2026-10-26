@@ -1,3 +1,4 @@
+import { MAX_EVENTS, RECORD_LIMITS } from "./limits.ts";
 import { z } from "zod";
 const text = (max = 200) => z.string().trim().min(1).max(max);
 export const agendaItemSchema = z.object({
@@ -68,13 +69,13 @@ export const ideaSchema = z.object({
 export const eventSchema = briefSchema
   .extend({
     id: text(100),
-    budgets: z.array(budgetSchema).max(100),
-    tasks: z.array(taskSchema).max(300),
-    vendors: z.array(vendorSchema).max(100),
-    guestList: z.array(guestSchema).max(1000),
-    ideas: z.array(ideaSchema).max(100),
+    budgets: z.array(budgetSchema).max(RECORD_LIMITS.budgets),
+    tasks: z.array(taskSchema).max(RECORD_LIMITS.tasks),
+    vendors: z.array(vendorSchema).max(RECORD_LIMITS.vendors),
+    guestList: z.array(guestSchema).max(RECORD_LIMITS.guestList),
+    ideas: z.array(ideaSchema).max(RECORD_LIMITS.ideas),
     notes: z.string().max(10000),
-    agenda: z.array(agendaItemSchema).max(50).default([]),
+    agenda: z.array(agendaItemSchema).max(RECORD_LIMITS.agenda).default([]),
     provenance: z
       .object({
         source: z.enum(["ai", "template"]),
@@ -105,7 +106,7 @@ export const eventSchema = briefSchema
 export const workspaceSchema = z
   .object({
     version: z.literal(1),
-    events: z.array(eventSchema).min(1).max(30),
+    events: z.array(eventSchema).min(1).max(MAX_EVENTS),
     activeId: text(100),
   })
   .superRefine((workspace, context) => {

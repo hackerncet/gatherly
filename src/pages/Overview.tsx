@@ -1,3 +1,5 @@
+import type { UpdateEvent, Notify } from "../lib/commands";
+import { changeEventRecord } from "../lib/records";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -14,8 +16,10 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
-import { Botanical, SectionTitle, TextLink } from "../components/ui";
-import { totals, today } from "../lib/domain.ts";
+import { Botanical } from "../components/Botanical";
+import { SectionTitle, TextLink } from "../components/ui";
+import { totals } from "../lib/events.ts";
+import { today } from "../lib/dates.ts";
 import { dateLabel, daysUntil, money } from "../lib/storage";
 import type { Event, Page } from "../lib/types";
 export function Overview({
@@ -23,11 +27,13 @@ export function Overview({
   onUpdate,
   navigate,
   onEdit,
+  notify,
 }: {
   event: Event;
-  onUpdate: (e: Event) => void;
+  onUpdate: UpdateEvent;
   navigate: (p: Page) => void;
   onEdit: () => void;
+  notify: Notify;
 }) {
   const t = totals(event);
   const days = daysUntil(event.date);
@@ -164,14 +170,17 @@ export function Overview({
                       type="checkbox"
                       aria-label={`Complete ${task.title}`}
                       checked={task.done}
-                      onChange={() =>
-                        onUpdate({
-                          ...event,
-                          tasks: event.tasks.map((t) =>
-                            t.id === task.id ? { ...t, done: !t.done } : t,
+                      onChange={() => {
+                        const result = onUpdate((current) =>
+                          changeEventRecord(
+                            current,
+                            "tasks",
+                            task.id,
+                            (record) => ({ ...record, done: !record.done }),
                           ),
-                        })
-                      }
+                        );
+                        if (!result.ok) notify(result.error, "error");
+                      }}
                     />
                     <div>
                       <strong>{task.title}</strong>

@@ -23,6 +23,15 @@ export default tseslint.config(
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "error",
       "@typescript-eslint/no-unnecessary-type-assertion": "error",
+      "@typescript-eslint/no-unnecessary-condition": [
+        "error",
+        { allowConstantLoopConditions: true },
+      ],
+      "@typescript-eslint/consistent-type-imports": [
+        "error",
+        { prefer: "type-imports", fixStyle: "inline-type-imports" },
+      ],
+      eqeqeq: ["error", "always"],
       "@typescript-eslint/switch-exhaustiveness-check": "error",
       "@typescript-eslint/no-floating-promises": "error",
       "@typescript-eslint/no-misused-promises": [

@@ -1,5 +1,8 @@
-import { useFormValidation } from "../lib/useFormValidation";
-import { useState, type FormEvent } from "react";
+import { guestSchema } from "../lib/schemas";
+import { GuestEditor } from "../components/editors/GuestEditor";
+import { useEventRecords } from "../lib/useEventRecords";
+import type { EventPageProps } from "../lib/commands";
+import { useState } from "react";
 import {
   Check,
   Clock3,
@@ -9,25 +12,15 @@ import {
   Users,
   Download,
 } from "lucide-react";
-import { Confirm, Empty, Modal, PageHeading } from "../components/ui";
-import { escapeCsv, guestSchema, totals, uid } from "../lib/domain.ts";
+import { Confirm } from "../components/Confirm";
+import { Empty, PageHeading } from "../components/ui";
+import { escapeCsv, totals } from "../lib/events.ts";
 import { downloadFile } from "../lib/storage";
-import type { Event, Guest } from "../lib/types";
-export function Guests({
-  event,
-  onUpdate,
-  notify,
-}: {
-  event: Event;
-  onUpdate: (e: Event) => void;
-  notify: (s: string) => void;
-}) {
-  const [editing, setEditing] = useState<Guest | null | false>(false);
+export function Guests({ event, onUpdate, notify }: EventPageProps) {
+  const records = useEventRecords("guestList", onUpdate, notify);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
-  const validation = useFormValidation();
-  const { error, errorId } = validation;
   const t = totals(event);
   const total = event.guestList.reduce((n, g) => n + g.count, 0);
   const guests = event.guestList.filter(
@@ -35,35 +28,7 @@ export function Guests({
       (filter === "all" || filter === g.rsvp) &&
       `${g.name} ${g.group}`.toLowerCase().includes(search.toLowerCase()),
   );
-  function save(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const f = new FormData(e.currentTarget);
-    const r = validation.parse(
-      guestSchema,
-      {
-        id: editing ? editing.id : uid(),
-        name: f.get("name"),
-        group: f.get("group"),
-        count: Number(f.get("count")),
-        rsvp: f.get("rsvp"),
-        dietary: f.get("dietary"),
-      },
-      e.currentTarget,
-    );
-    if (!r) return;
-    if (!editing && event.guestList.length >= 1000) {
-      validation.fail("You can keep up to 1,000 guest entries per event.");
-      return;
-    }
-    onUpdate({
-      ...event,
-      guestList: editing
-        ? event.guestList.map((g) => (g.id === editing.id ? r : g))
-        : [...event.guestList, r],
-    });
-    setEditing(false);
-    notify("Guest details saved.");
-  }
+
   function exportGuests() {
     const rows = [
       ["Name", "Group", "Party size", "RSVP", "Dietary or access notes"],
@@ -93,13 +58,7 @@ export function Guests({
               <Download size={16} />
               Export
             </button>
-            <button
-              className="button primary"
-              onClick={() => {
-                setEditing(null);
-                validation.clear();
-              }}
-            >
+            <button className="button primary" onClick={records.create}>
               <Plus size={17} />
               Add guests
             </button>
@@ -201,19 +160,13 @@ export function Guests({
                           className={`rsvp-select ${g.rsvp}`}
                           aria-label={`RSVP for ${g.name}`}
                           value={g.rsvp}
-                          onChange={(e) =>
-                            onUpdate({
-                              ...event,
-                              guestList: event.guestList.map((item) =>
-                                item.id === g.id
-                                  ? {
-                                      ...item,
-                                      rsvp: e.target.value as Guest["rsvp"],
-                                    }
-                                  : item,
-                              ),
-                            })
-                          }
+                          onChange={(event) => {
+                            const rsvp = event.currentTarget.value;
+                            records.change(g.id, (current) => ({
+                              ...current,
+                              rsvp: guestSchema.shape.rsvp.parse(rsvp),
+                            }));
+                          }}
                         >
                           <option value="pending">Pending</option>
                           <option value="confirmed">Confirmed</option>
@@ -227,10 +180,7 @@ export function Guests({
                         <button
                           className="icon-button"
                           aria-label={`Edit ${g.name}`}
-                          onClick={() => {
-                            setEditing(g);
-                            validation.clear();
-                          }}
+                          onClick={() => records.edit(g)}
                         >
                           <Pencil size={16} />
                         </button>
@@ -264,103 +214,19 @@ export function Guests({
           included in AI requests.
         </p>
       </div>
-      {editing !== false && (
-        <Modal
-          title={
-            editing ? "A few guest details" : "Make room for someone special."
-          }
-          onClose={() => setEditing(false)}
-        >
-          <form onSubmit={save}>
-            <div className="form-grid">
-              <label className="span-2">
-                Guest or household name
-                <input
-                  name="name"
-                  {...validation.input("name")}
-                  required
-
-                  maxLength={100}
-                  defaultValue={editing?.name}
-                />
-              </label>
-              <label>
-                Group
-                <input
-                  name="group"
-                  {...validation.input("group")}
-                  required
-                  maxLength={60}
-                  defaultValue={editing?.group || "Friends"}
-                />
-              </label>
-              <label>
-                Party size
-                <input
-                  name="count"
-                  {...validation.input("count")}
-                  type="number"
-                  required
-                  min="1"
-                  max="100"
-                  defaultValue={editing?.count || 1}
-                />
-              </label>
-              <label className="span-2">
-                RSVP
-                <select
-                  name="rsvp"
-                  {...validation.input("rsvp")}
-                  defaultValue={editing?.rsvp || "pending"}
-                >
-                  <option value="pending">Pending</option>
-                  <option value="confirmed">Confirmed</option>
-                  <option value="declined">Declined</option>
-                </select>
-              </label>
-              <label className="span-2">
-                Dietary or accessibility needs{" "}
-                <span className="optional">optional</span>
-                <textarea
-                  name="dietary"
-                  {...validation.input("dietary")}
-                  maxLength={180}
-                  rows={3}
-                  defaultValue={editing?.dietary}
-                  placeholder="Only add details your guest has agreed to share."
-                />
-              </label>
-            </div>
-            {error && (
-              <p role="alert" id={errorId} className="form-error">
-                {error}
-              </p>
-            )}
-            <div className="modal-actions">
-              <button
-                type="button"
-                className="button secondary"
-                onClick={() => setEditing(false)}
-              >
-                Cancel
-              </button>
-              <button className="button primary">Save guest</button>
-            </div>
-          </form>
-        </Modal>
+      {records.isOpen && (
+        <GuestEditor
+          initial={records.initial}
+          onSave={(record) => records.save(record, "Guest details updated.")}
+          onClose={records.close}
+        />
       )}
       {deleting && (
         <Confirm
           title="Remove this guest entry?"
           description="This guest’s party size, RSVP and notes will be removed. No message will be sent."
           onClose={() => setDeleting(null)}
-          onConfirm={() => {
-            onUpdate({
-              ...event,
-              guestList: event.guestList.filter((g) => g.id !== deleting),
-            });
-            notify("Guest removed.");
-          }}
+          onConfirm={() => records.remove(deleting, "Guest removed.")}
         />
       )}
     </>

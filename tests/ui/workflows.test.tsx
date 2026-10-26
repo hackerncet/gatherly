@@ -1,3 +1,4 @@
+import { COMMAND_OK } from "../../src/lib/commands";
 import { useState } from "react";
 import App from "../../src/App";
 import { IDBFactory } from "fake-indexeddb";
@@ -12,7 +13,7 @@ import {
 import userEvent from "@testing-library/user-event";
 import axe from "axe-core";
 import { EventForm } from "../../src/components/EventForm";
-import { Modal } from "../../src/components/ui";
+import { Modal } from "../../src/components/Modal";
 import { Guide } from "../../src/pages/Guide";
 import { PageBoundary } from "../../src/components/PageBoundary";
 import { Studio } from "../../src/pages/Studio";
@@ -158,7 +159,10 @@ test("day-of schedule supports add, edit, delete, cancel and download links", as
     return (
       <Guide
         event={event}
-        onUpdate={setEvent}
+        onUpdate={(change) => {
+          setEvent(change);
+          return COMMAND_OK;
+        }}
         navigate={navigate}
         notify={notify}
       />
@@ -262,6 +266,7 @@ const renderCases = [
       <Overview
         event={makeEvent()}
         onUpdate={vi.fn()}
+        notify={notify}
         navigate={navigate}
         onEdit={vi.fn()}
       />

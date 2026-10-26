@@ -1,17 +1,17 @@
-# Quality and acceptance evidence — Gatherly 1.2
+# Quality and acceptance evidence — Gatherly 1.3
 
 Reviewed on 26 October 2026 (IST). This is measured engineering evidence, not a
 self-awarded competition score or a certification. The owner's latest supplied
 external result is 96.72 overall: quality 88, security 99, efficiency 100,
 testing 99, accessibility 99 and alignment 100. No deduction annotations were
-supplied. [The final review](docs/FINAL_REVIEW.md) records the reproduced gaps,
+supplied. [The code quality review](docs/CODE_QUALITY_REVIEW.md) records the reproduced gaps,
 changes and verification. Earlier findings remain in the dated
 [improvement audit](IMPROVEMENT_AUDIT.md) and [live baseline](LIVE_AI_AUDIT_2026-10-25.md).
 
 ## Reproduce the checks
 
 Requires Node 24. Run `npm ci`, `NODE_ENV=production npm run check`, then
-`npm audit --audit-level=moderate`. `check` includes formatting, type-aware ESLint,
+`npm audit --audit-level=moderate`. `check` includes formatting, dependency-boundary/cycle analysis, type-aware ESLint,
 strict TypeScript (including UI tests), the production build, asset budgets,
 Node HTTP/domain/persistence tests and complete UI/component tests.
 
@@ -19,13 +19,13 @@ Node HTTP/domain/persistence tests and complete UI/component tests.
 
 | Check                            | Observed result                                                           |
 | -------------------------------- | ------------------------------------------------------------------------- |
-| Core tests                       | 117 passing Node tests                                                    |
-| UI tests                         | 45 passing interaction, hook, recovery and axe tests                      |
-| Core coverage                    | 97.89% lines, 94.57% branches, 94.03% functions                           |
-| Complete UI coverage             | 88.82% lines, 87.43% statements, 81.71% branches, 85.19% functions        |
+| Core tests                       | 127 passing Node tests                                                    |
+| UI tests                         | 55 passing interaction, hook, recovery and axe tests                      |
+| Core coverage                    | 97.76% lines, 95.01% branches, 93.84% functions                           |
+| Complete UI coverage             | 91.21% lines, 90.55% statements, 84.72% branches, 89.55% functions        |
 | Indexed-access / type-aware lint | Passed; maximum function complexity 20 enforced                           |
 | Dependency audit                 | Zero known vulnerabilities across production and development dependencies |
-| Initial JavaScript               | 372,727 bytes / 115,982 gzip in the recorded build                        |
+| Initial JavaScript               | 374,727 bytes / 116,732 gzip in the recorded build                        |
 | Stylesheet                       | 59,673 bytes / 12,777 gzip in the recorded build                          |
 
 Core scope is server handlers/provider/allocation and loaded shared/domain/storage
@@ -66,14 +66,16 @@ Render builds run the same production-environment `check` command. The service
 uses its existing automatic deployment from `main`; no secrets, pricing tier,
 provider spending limits or stored workspace format were changed.
 
-The deployed application commit `25c830faa2a81d3d5b023bf2cb8e9ffad8aa1c72`
+The latest local 1.3 checks are recorded in the [code quality review](docs/CODE_QUALITY_REVIEW.md).
+GitHub CI and deployed results will be recorded there after release. The earlier
+1.2 application commit `25c830faa2a81d3d5b023bf2cb8e9ffad8aa1c72`
 passed [CI run 40273098096](https://github.com/hackerncet/gatherly/actions/runs/40273098096),
 including CodeQL with zero security-and-quality findings and no suppressed rules.
 Render deployment `dep-dbfe33k9v7es73dc6iq0` is live. All six saved browser events
 and the selected event matched the pre-upgrade export field for field after reload.
 Calendar and Markdown downloads completed and matched the saved event payload.
 
-New authenticated OpenRouter wedding/birthday/community acceptance passed against
+Recorded authenticated OpenRouter wedding/birthday/community acceptance passed against
 the 1.2 backend. Each generated plan passed the response schema, exact INR 60,000
 allocation and INR 6,000 contingency checks. The final follow-up changed only
 frontend validation wording; the tested backend is identical. The

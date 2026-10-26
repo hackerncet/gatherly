@@ -1,7 +1,7 @@
 # Gatherly 1.1 — findings, implementation and verification
 
-**Historical release record.** The latest 1.2 review supersedes the current-release
-metrics in this document. See [FINAL_REVIEW.md](docs/FINAL_REVIEW.md),
+**Historical release record.** The latest 1.3 review supersedes the current-release
+metrics in this document. See [CODE_QUALITY_REVIEW.md](docs/CODE_QUALITY_REVIEW.md),
 [QUALITY.md](QUALITY.md) and the
 [release verification record](docs/RELEASE_VERIFICATION_2026-10-26.json).
 
