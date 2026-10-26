@@ -9,14 +9,16 @@ export default defineConfig({
     restoreMocks: true,
     coverage: {
       provider: "v8",
+      reportsDirectory: "coverage/ui",
       include: [
-        "src/components/EventForm.tsx",
-        "src/components/DownloadLink.tsx",
-        "src/pages/Guide.tsx",
+        "src/**/*.tsx",
+        "src/lib/use*.ts",
         "src/lib/api.ts",
+        "src/lib/navigation.ts",
       ],
+      exclude: ["src/main.tsx"],
       reporter: ["text", "json-summary", "html"],
-      thresholds: { lines: 80, statements: 80, functions: 80, branches: 70 },
+      thresholds: { lines: 85, statements: 85, functions: 80, branches: 80 },
     },
   },
 });

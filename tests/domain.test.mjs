@@ -83,6 +83,19 @@ test("leap year and year boundary date arithmetic", () => {
   assert.equal(shiftDate("2028-03-01", -1), "2028-02-29");
   assert.equal(shiftDate("2027-01-01", -1), "2026-12-31");
 });
+
+test("calendar date boundaries reject unsupported shifts without creating malformed saved tasks", () => {
+  assert.throws(() => shiftDate("9999-12-31", 1));
+  assert.throws(() => shiftDate("0001-01-01", -1));
+  assert.throws(() => shiftDate("2027-01-01", 0.5));
+  assert.equal(
+    briefSchema.safeParse({ ...brief, date: "0000-01-01" }).success,
+    false,
+  );
+  const historical = eventFromPlan({ ...brief, date: "0001-01-01" });
+  assert.ok(eventSchema.safeParse(historical).success);
+  assert.ok(historical.tasks.every((task) => task.date === "0001-01-01"));
+});
 test("workspace versions and nested data are validated", () => {
   const event = eventFromPlan(brief);
   const workspace = { version: 1, events: [event], activeId: event.id };

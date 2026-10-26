@@ -1,3 +1,4 @@
+import { useFormValidation } from "../lib/useFormValidation";
 import { useState, type FormEvent } from "react";
 import {
   Check,
@@ -29,33 +30,35 @@ export function Vendors({
   const [editing, setEditing] = useState<Vendor | null | false>(false);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [filter, setFilter] = useState("all");
-  const [error, setError] = useState("");
+  const validation = useFormValidation();
+  const { error, errorId } = validation;
   function save(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    const r = vendorSchema.safeParse({
-      id: editing ? editing.id : uid(),
-      name: f.get("name"),
-      category: f.get("category"),
-      contact: f.get("contact"),
-      quote: Number(f.get("quote")),
-      status: f.get("status"),
-      notes: f.get("notes"),
-      checklist: editing ? editing.checklist : [false, false, false, false],
-    });
-    if (!r.success) {
-      setError("Check your vendor details and quote amount.");
-      return;
-    }
+    const r = validation.parse(
+      vendorSchema,
+      {
+        id: editing ? editing.id : uid(),
+        name: f.get("name"),
+        category: f.get("category"),
+        contact: f.get("contact"),
+        quote: Number(f.get("quote")),
+        status: f.get("status"),
+        notes: f.get("notes"),
+        checklist: editing ? editing.checklist : [false, false, false, false],
+      },
+      e.currentTarget,
+    );
+    if (!r) return;
     if (!editing && event.vendors.length >= 100) {
-      setError("You can keep up to 100 vendors per event.");
+      validation.fail("You can keep up to 100 vendors per event.");
       return;
     }
     onUpdate({
       ...event,
       vendors: editing
-        ? event.vendors.map((v) => (v.id === editing.id ? r.data : v))
-        : [...event.vendors, r.data],
+        ? event.vendors.map((v) => (v.id === editing.id ? r : v))
+        : [...event.vendors, r],
     });
     setEditing(false);
     notify("Vendor details saved.");
@@ -74,7 +77,7 @@ export function Vendors({
             className="button primary"
             onClick={() => {
               setEditing(null);
-              setError("");
+              validation.clear();
             }}
           >
             <Plus size={17} />
@@ -136,7 +139,7 @@ export function Vendors({
                     aria-label={`Edit ${v.name}`}
                     onClick={() => {
                       setEditing(v);
-                      setError("");
+                      validation.clear();
                     }}
                   >
                     <Pencil size={16} />
@@ -226,6 +229,7 @@ export function Vendors({
                 Vendor or business name
                 <input
                   name="name"
+                  {...validation.input("name")}
 
                   required
                   maxLength={100}
@@ -236,6 +240,7 @@ export function Vendors({
                 Category
                 <input
                   name="category"
+                  {...validation.input("category")}
                   required
                   maxLength={80}
                   defaultValue={editing?.category || "Venue"}
@@ -260,6 +265,7 @@ export function Vendors({
                 Status
                 <select
                   name="status"
+                  {...validation.input("status")}
                   defaultValue={editing?.status || "shortlisted"}
                 >
                   <option value="shortlisted">Shortlisted</option>
@@ -271,6 +277,7 @@ export function Vendors({
                 Contact details <span className="optional">optional</span>
                 <input
                   name="contact"
+                  {...validation.input("contact")}
                   maxLength={180}
                   defaultValue={editing?.contact}
                   placeholder="Phone, email or website"
@@ -280,6 +287,7 @@ export function Vendors({
                 Quoted amount ({event.currency})
                 <input
                   name="quote"
+                  {...validation.input("quote")}
                   type="number"
                   min="0"
                   max="1000000000"
@@ -292,6 +300,7 @@ export function Vendors({
                 Notes
                 <textarea
                   name="notes"
+                  {...validation.input("notes")}
                   rows={3}
                   maxLength={600}
                   defaultValue={editing?.notes}
@@ -299,7 +308,7 @@ export function Vendors({
               </label>
             </div>
             {error && (
-              <p className="form-error" role="alert">
+              <p className="form-error" id={errorId} role="alert">
                 {error}
               </p>
             )}

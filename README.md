@@ -13,7 +13,7 @@ npm ci
 npm run dev
 ```
 
-Open `http://localhost:3000`. For the production version:
+Open `http://localhost:3000`. Development watches the frontend and writes external assets; reload the page after a rebuild. It enforces CSP without inline Vite scripts or injected styles. Restart the command after server-side edits. For the production version:
 
 ```sh
 npm run build
@@ -35,7 +35,7 @@ The server binds to `0.0.0.0` and respects `PORT`. The interface and API share o
 - Initial plan provenance: starter/AI source, model when available and creation date.
 - AI Studio with searchable live OpenRouter text-model catalog, free-only filtering, bounded generation, cancel, preview and creation of a separate new event.
 - Atomic, revision-checked IndexedDB saves with cross-tab conflict recovery, validated JSON import (up to 25 MB), complete workspace backup and unread-data recovery downloads.
-- Keyboard navigation, labeled forms, native focus-trapped dialogs, reduced-motion support and responsive layouts.
+- Keyboard navigation, labeled forms, native focus-trapped dialogs, field-associated validation, forced-colors and reduced-motion support and responsive layouts.
 
 ## AI configuration
 
@@ -81,11 +81,10 @@ No disk or database is needed: plans stay in each visitor's browser. The app inc
 
 ```sh
 npm run check
-npm run format:check
 npm audit --audit-level=moderate
 ```
 
-`npm run check` performs ESLint (including hooks/accessibility checks), strict TypeScript checking across frontend/shared/server code, a Vite production build, asset-size budgets, Node integration tests and Vitest component/axe tests with coverage gates. See [IMPROVEMENT_AUDIT.md](IMPROVEMENT_AUDIT.md) for the latest findings and fix loop, [QUALITY.md](QUALITY.md) for evidence and limits and [EVALUATION.md](EVALUATION.md) for the six-criterion evaluation guide. Automated tests use mocked provider responses. Separate real-provider acceptance results and their limits are recorded in the audit.
+`npm run check` performs formatting and type-aware ESLint (including hooks/accessibility and complexity checks), strict TypeScript checking across frontend/shared/server and UI test code, a Vite production build, asset-size budgets, Node integration tests and Vitest component/axe tests with complete UI and core coverage gates. CI also runs CodeQL security-and-quality analysis and retains coverage artifacts. See [IMPROVEMENT_AUDIT.md](IMPROVEMENT_AUDIT.md) for historical findings and [docs/FINAL_REVIEW.md](docs/FINAL_REVIEW.md) for the latest fix loop, [QUALITY.md](QUALITY.md) for evidence and limits and [EVALUATION.md](EVALUATION.md) for the six-criterion evaluation guide. Automated tests use mocked provider responses. Separate real-provider acceptance results and their limits are recorded in the audit.
 
 ## Structure
 

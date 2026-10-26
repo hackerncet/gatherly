@@ -5,7 +5,7 @@ import { normalizeModelPrice } from "../src/lib/models.ts";
 import { allocatePlanBudget, providerPlanSchema } from "./allocation.ts";
 
 export const API = "https://openrouter.ai/api/v1";
-export const fallbackModels: Model[] = [
+export const fallbackModels: [Model] = [
   {
     id: "openrouter/free",
     name: "OpenRouter · Free model router",
@@ -248,6 +248,7 @@ export function readPlan(raw: unknown, budget: number) {
   const envelope = completionSchema.safeParse(raw);
   if (!envelope.success) throw new PlanResponseError("invalid_plan");
   const choice = envelope.data.choices[0];
+  if (!choice) throw new PlanResponseError("invalid_plan");
   if (choice.finish_reason === "length")
     throw new PlanResponseError("output_limit");
   if (!choice.message.content?.trim())

@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import {
   Download,
   FileJson,
@@ -21,7 +21,7 @@ export function SettingsPage({
 }: {
   workspace: Workspace;
   event: Event;
-  onImport: (w: Workspace) => void;
+  onImport: (w: Workspace) => Promise<boolean>;
   onDelete: () => void;
   onEdit: () => void;
   notify: (s: string) => void;
@@ -29,20 +29,41 @@ export function SettingsPage({
   const ref = useRef<HTMLInputElement>(null);
   const [incoming, setIncoming] = useState<Workspace | null>(null);
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const readSequence = useRef(0);
+  useEffect(
+    () => () => {
+      readSequence.current++;
+    },
+    [],
+  );
   async function importFile(e: ChangeEvent<HTMLInputElement>) {
+    const input = e.currentTarget;
+    const sequence = ++readSequence.current;
     setError("");
-    const file = e.target.files?.[0];
-    if (!file) return;
+    setIncoming(null);
+    const file = input.files?.[0];
+    if (!file) {
+      setBusy(false);
+      return;
+    }
+    setBusy(true);
     try {
       if (file.size > 25_000_000)
         throw new Error("Please choose a backup smaller than 25 MB.");
-      setIncoming(parseBackup(await file.text()));
+      const parsed = parseBackup(await file.text());
+      if (sequence === readSequence.current) setIncoming(parsed);
     } catch {
+      if (sequence !== readSequence.current) return;
       setError(
         "This backup could not be imported. Use an unmodified Gatherly JSON backup under 25 MB. Your current plans have not changed.",
       );
+    } finally {
+      if (sequence === readSequence.current) {
+        setBusy(false);
+        input.value = "";
+      }
     }
-    e.target.value = "";
   }
   return (
     <>
@@ -91,6 +112,7 @@ export function SettingsPage({
             </button>
             <button
               className="button secondary"
+              disabled={busy}
               onClick={() => ref.current?.click()}
             >
               <Upload size={16} />
@@ -112,7 +134,7 @@ export function SettingsPage({
             </p>
           )}
           {incoming && (
-            <div className="import-confirm">
+            <div className="import-confirm" data-workspace-draft="true">
               <strong>Import {incoming.events.length} events?</strong>
               <p>
                 This replaces this browser’s current workspace. Export your
@@ -121,15 +143,32 @@ export function SettingsPage({
               <div className="button-group">
                 <button
                   className="button primary"
-                  onClick={() => {
-                    onImport(incoming);
-                    setIncoming(null);
+                  disabled={busy}
+                  onClick={async () => {
+                    setError("");
+                    setBusy(true);
+                    try {
+                      if (await onImport(incoming)) {
+                        setIncoming(null);
+                        notify("Workspace imported and saved on your device.");
+                      } else
+                        setError(
+                          "The import was not saved. Your current workspace is still available. Export it before trying again.",
+                        );
+                    } catch {
+                      setError(
+                        "The import could not be saved. Your current workspace has not been replaced.",
+                      );
+                    } finally {
+                      setBusy(false);
+                    }
                   }}
                 >
                   Replace workspace
                 </button>
                 <button
                   className="button secondary"
+                  disabled={busy}
                   onClick={() => setIncoming(null)}
                 >
                   Cancel
@@ -137,6 +176,9 @@ export function SettingsPage({
               </div>
             </div>
           )}
+          <p role="status" className="field-note">
+            {busy ? "Checking and saving your backup…" : ""}
+          </p>
         </section>
         <section className="panel settings-card privacy-card">
           <span className="large-icon lilac">

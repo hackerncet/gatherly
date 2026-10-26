@@ -1,27 +1,28 @@
-import { useState, useId, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { Heart, Cake, Users, ArrowRight } from "lucide-react";
 import { briefSchema, shiftDate, today } from "../lib/domain.ts";
+import { useFormValidation } from "../lib/useFormValidation";
 import type { Brief, EventType } from "../lib/types";
 export const eventTypes = [
   {
-    id: "wedding" as EventType,
+    id: "wedding",
     label: "Wedding",
     icon: Heart,
     note: "Your next chapter",
   },
   {
-    id: "birthday" as EventType,
+    id: "birthday",
     label: "Birthday",
     icon: Cake,
     note: "Another year of joy",
   },
   {
-    id: "community" as EventType,
+    id: "community",
     label: "Community",
     icon: Users,
     note: "Better, together",
   },
-];
+] as const;
 export function EventForm({
   initial,
   onSave,
@@ -32,34 +33,26 @@ export function EventForm({
   onCancel: () => void;
 }) {
   const [type, setType] = useState<EventType>(initial?.type || "wedding");
-  const [error, setError] = useState("");
-  const [errorField, setErrorField] = useState("");
-  const errorId = useId();
+  const validation = useFormValidation();
+  const { error, errorId } = validation;
   function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
-    const result = briefSchema.safeParse({
-      title: form.get("title"),
-      type,
-      date: form.get("date"),
-      location: form.get("location"),
-      guests: Number(form.get("guests")),
-      budget: Number(form.get("budget")),
-      currency: form.get("currency"),
-      preferences: form.get("preferences"),
-    });
-    if (!result.success) {
-      const issue = result.error.issues[0];
-      const field = String(issue?.path[0] || "");
-      setError(
-        `Please check ${field || "your event details"}: ${issue?.message || "A valid value is required."}`,
-      );
-      setErrorField(field);
-      const control = e.currentTarget.elements.namedItem(field);
-      if (control instanceof HTMLElement) control.focus();
-      return;
-    }
-    onSave(result.data, form.get("shiftTimeline") === "on");
+    const result = validation.parse(
+      briefSchema,
+      {
+        title: form.get("title"),
+        type,
+        date: form.get("date"),
+        location: form.get("location"),
+        guests: Number(form.get("guests")),
+        budget: Number(form.get("budget")),
+        currency: form.get("currency"),
+        preferences: form.get("preferences"),
+      },
+      e.currentTarget,
+    );
+    if (result) onSave(result, form.get("shiftTimeline") === "on");
   }
   return (
     <form onSubmit={submit}>
@@ -86,8 +79,7 @@ export function EventForm({
           Event name
           <input
             name="title"
-            aria-invalid={errorField === "title" || undefined}
-            aria-describedby={errorField === "title" ? errorId : undefined}
+            {...validation.input("title")}
             defaultValue={initial?.title}
             required
             maxLength={100}
@@ -98,8 +90,7 @@ export function EventForm({
           Event date
           <input
             name="date"
-            aria-invalid={errorField === "date" || undefined}
-            aria-describedby={errorField === "date" ? errorId : undefined}
+            {...validation.input("date")}
             type="date"
             required
             defaultValue={initial?.date || shiftDate(today(), 60)}
@@ -109,8 +100,7 @@ export function EventForm({
           Location
           <input
             name="location"
-            aria-invalid={errorField === "location" || undefined}
-            aria-describedby={errorField === "location" ? errorId : undefined}
+            {...validation.input("location")}
             required
             maxLength={120}
             defaultValue={initial?.location}
@@ -121,8 +111,7 @@ export function EventForm({
           Expected guests
           <input
             name="guests"
-            aria-invalid={errorField === "guests" || undefined}
-            aria-describedby={errorField === "guests" ? errorId : undefined}
+            {...validation.input("guests")}
             type="number"
             min="1"
             max="100000"
@@ -135,8 +124,7 @@ export function EventForm({
           Currency
           <select
             name="currency"
-            aria-invalid={errorField === "currency" || undefined}
-            aria-describedby={errorField === "currency" ? errorId : undefined}
+            {...validation.input("currency")}
             defaultValue={initial?.currency || "INR"}
           >
             <option value="INR">INR — Indian rupee</option>
@@ -149,8 +137,7 @@ export function EventForm({
           Total budget
           <input
             name="budget"
-            aria-invalid={errorField === "budget" || undefined}
-            aria-describedby={errorField === "budget" ? errorId : undefined}
+            {...validation.input("budget")}
             type="number"
             required
             min="1"
@@ -163,10 +150,7 @@ export function EventForm({
           Make it yours <span className="optional">optional</span>
           <textarea
             name="preferences"
-            aria-invalid={errorField === "preferences" || undefined}
-            aria-describedby={
-              errorField === "preferences" ? errorId : undefined
-            }
+            {...validation.input("preferences")}
             rows={3}
             maxLength={1600}
             defaultValue={initial?.preferences}

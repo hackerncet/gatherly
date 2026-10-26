@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { once } from "node:events";
+import { request as httpRequest } from "node:http";
 import { createApp } from "../server/app.ts";
 import { starterPlan } from "../src/lib/domain.ts";
 const brief = {
@@ -48,7 +49,7 @@ async function run(options, fn) {
   await once(server, "listening");
   const base = `http://127.0.0.1:${server.address().port}`;
   try {
-    await fn(base);
+    await fn(base, server);
   } finally {
     await new Promise((r) => server.close(r));
   }
@@ -80,6 +81,53 @@ const mockFetch =
       ),
       { status: 200, headers: { "Content-Type": "application/json" } },
     );
+
+test("a client disconnected while waiting for the catalog cannot start billable generation", async () => {
+  let releaseCatalog, catalogStarted;
+  const started = new Promise((resolve) => {
+    catalogStarted = resolve;
+  });
+  const waiting = new Promise((resolve) => {
+    releaseCatalog = resolve;
+  });
+  let generations = 0;
+  await run(
+    {
+      env,
+      fetchImpl: async (url) => {
+        if (url.endsWith("/models")) {
+          catalogStarted();
+          await waiting;
+        } else generations++;
+        return mockFetch()(url);
+      },
+    },
+    async (base, server) => {
+      const disconnected = new Promise((resolve) => {
+        server.once("request", (_request, response) =>
+          response.once("close", resolve),
+        );
+      });
+      const request = httpRequest(`${base}/api/plan`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-ai-access-code": env.AI_ACCESS_CODE,
+        },
+      });
+      request.on("error", () => {});
+      request.end(JSON.stringify(input));
+      await started;
+      const closed = once(request, "close").catch(() => {});
+      request.destroy();
+      await closed;
+      await disconnected;
+      releaseCatalog();
+      await fetch(`${base}/api/models`);
+      assert.equal(generations, 0);
+    },
+  );
+});
 
 test("native structured-output routes receive the same bounded provider contract enforced on return", () => {
   let captured;
@@ -223,6 +271,21 @@ test("dummy keys use template mode without an upstream request", () =>
       assert.equal(data.model, null);
     },
   ));
+
+test("production CSP denies inline styles, embedded frames and base overrides; device APIs are disabled", () =>
+  run({ env: { ...env, NODE_ENV: "production" } }, async (base) => {
+    const response = await fetch(`${base}/api/health`);
+    const policy = response.headers.get("content-security-policy");
+    assert.match(policy, /style-src 'self'/);
+    assert.match(policy, /style-src-attr 'none'/);
+    assert.match(policy, /frame-src 'none'/);
+    assert.match(policy, /base-uri 'none'/);
+    assert.doesNotMatch(policy, /unsafe-inline|unsafe-eval/);
+    assert.equal(
+      response.headers.get("permissions-policy"),
+      "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+    );
+  }));
 test("real API key without access code stays disabled", () =>
   run({ env: { OPENROUTER_API_KEY: "real-key" } }, async (base) => {
     assert.equal((await (await post(base)).json()).source, "template");
@@ -311,6 +374,30 @@ test("catalog failure returns a clearly identified fallback", () =>
       assert.equal(data.models[0].id, "openrouter/free");
     },
   ));
+
+test("page file serving is throttled without preventing a health probe", () =>
+  run({ env, rateLimits: true }, async (base) => {
+    for (let count = 0; count < 180; count++) {
+      const response = await fetch(`${base}/favicon.svg`);
+      assert.equal(response.status, 200);
+      await response.arrayBuffer();
+    }
+    const blocked = await fetch(`${base}/favicon.svg`);
+    assert.equal(blocked.status, 429);
+    assert.ok(blocked.headers.has("retry-after"));
+    assert.equal((await fetch(`${base}/api/health`)).status, 200);
+  }));
+
+test("development keeps CSP enforcement while allowing the local HTTP origin", () =>
+  run({ env: { ...env, NODE_ENV: "development" } }, async (base) => {
+    const response = await fetch(`${base}/api/health`);
+    const policy = response.headers.get("content-security-policy");
+    assert.match(policy, /style-src 'self'/);
+    assert.doesNotMatch(
+      policy,
+      /unsafe-inline|unsafe-eval|upgrade-insecure-requests/,
+    );
+  }));
 test("rejects unavailable model IDs", () =>
   run({ env, fetchImpl: mockFetch() }, async (base) => {
     assert.equal(

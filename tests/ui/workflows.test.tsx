@@ -146,10 +146,10 @@ test("day-of schedule supports add, edit, delete, cancel and download links", as
   vi.stubGlobal(
     "URL",
     class extends URL {
-      static createObjectURL() {
+      static override createObjectURL() {
         return "blob:calendar";
       }
-      static revokeObjectURL() {}
+      static override revokeObjectURL() {}
     },
   );
 
@@ -208,7 +208,7 @@ test("day-of schedule supports add, edit, delete, cancel and download links", as
 
 test("page failure retains export and navigation recovery", async () => {
   vi.spyOn(console, "error").mockImplementation(() => {});
-  function Broken() {
+  function Broken(): never {
     throw new Error("synthetic view failure");
   }
   const backup = vi.fn(),
@@ -383,7 +383,7 @@ test("migration keeps a differing older-tab workspace exportable instead of eras
   const repository = createWorkspaceRepository(factory);
   await repository.load(canonical);
   const old = structuredClone(canonical);
-  old.events[0].title = "Changes from an older application tab";
+  old.events[0]!.title = "Changes from an older application tab";
   const raw = JSON.stringify(old);
   localStorage.setItem(STORAGE_KEY, raw);
   vi.stubGlobal(
@@ -477,7 +477,7 @@ test("authenticated AI preview preserves model provenance and creates a separate
       }),
     }),
   );
-  expect(create.mock.calls[0][0].id).not.toBe(original.id);
+  expect(create.mock.calls[0]![0].id).not.toBe(original.id);
   expect(original.title).toBe(brief.title);
 });
 

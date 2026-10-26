@@ -1,3 +1,4 @@
+import { useFormValidation } from "../lib/useFormValidation";
 import { useMemo, useState, type FormEvent } from "react";
 import {
   CalendarDays,
@@ -28,6 +29,7 @@ export function Guide({
 }) {
   const [editing, setEditing] = useState<AgendaItem | null>(null);
   const [deleting, setDeleting] = useState<AgendaItem | null>(null);
+  const validation = useFormValidation();
   const risks = planningInsights(event, today());
   const calendar = useMemo(() => calendarFile(event), [event]);
   const brief = useMemo(() => eventBrief(event), [event]);
@@ -38,17 +40,18 @@ export function Guide({
     e.preventDefault();
     if (!editing) return;
     const values = new FormData(e.currentTarget);
-    const parsed = agendaItemSchema.safeParse({
-      id: editing.id,
-      time: values.get("time"),
-      title: values.get("title"),
-      owner: values.get("owner"),
-    });
-    if (!parsed.success) {
-      notify("Enter a valid time and a name for this schedule item.");
-      return;
-    }
-    const updated = parsed.data;
+    const parsed = validation.parse(
+      agendaItemSchema,
+      {
+        id: editing.id,
+        time: values.get("time"),
+        title: values.get("title"),
+        owner: values.get("owner"),
+      },
+      e.currentTarget,
+    );
+    if (!parsed) return;
+    const updated = parsed;
     const exists = event.agenda.some((a) => a.id === updated.id);
     onUpdate({
       ...event,
@@ -118,9 +121,10 @@ export function Guide({
             <button
               className="button primary"
               disabled={event.agenda.length >= 50}
-              onClick={() =>
-                setEditing({ id: uid(), time: "10:00", title: "", owner: "" })
-              }
+              onClick={() => {
+                validation.clear();
+                setEditing({ id: uid(), time: "10:00", title: "", owner: "" });
+              }}
             >
               <Plus size={17} />
               Add moment
@@ -138,7 +142,10 @@ export function Guide({
                   <button
                     className="icon-button"
                     aria-label={`Edit ${a.title}`}
-                    onClick={() => setEditing(a)}
+                    onClick={() => {
+                      validation.clear();
+                      setEditing(a);
+                    }}
                   >
                     <Pencil size={16} />
                   </button>
@@ -198,6 +205,7 @@ export function Guide({
                 type="time"
                 required
                 name="time"
+                {...validation.input("time")}
                 defaultValue={editing.time}
               />
             </label>
@@ -207,6 +215,7 @@ export function Guide({
                 required
                 maxLength={160}
                 name="title"
+                {...validation.input("title")}
                 defaultValue={editing.title}
               />
             </label>
@@ -215,9 +224,15 @@ export function Guide({
               <input
                 maxLength={100}
                 name="owner"
+                {...validation.input("owner")}
                 defaultValue={editing.owner}
               />
             </label>
+            {validation.error && (
+              <p className="form-error" role="alert" id={validation.errorId}>
+                {validation.error}
+              </p>
+            )}
             <div className="modal-actions">
               <button
                 type="button"

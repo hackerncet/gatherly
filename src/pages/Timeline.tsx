@@ -1,3 +1,4 @@
+import { useFormValidation } from "../lib/useFormValidation";
 import { useState, type FormEvent } from "react";
 import { CalendarDays, CheckCheck, Pencil, Plus, Trash2 } from "lucide-react";
 import { Confirm, Empty, Modal, PageHeading } from "../components/ui";
@@ -17,7 +18,8 @@ export function Timeline({
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<Task | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [error, setError] = useState("");
+  const validation = useFormValidation();
+  const { error, errorId } = validation;
   const complete = event.tasks.filter((t) => t.done).length;
   const tasks = [...event.tasks]
     .filter((t) =>
@@ -33,26 +35,27 @@ export function Timeline({
   function add(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    const r = taskSchema.safeParse({
-      id: editing?.id || uid(),
-      title: f.get("title"),
-      date: f.get("date"),
-      category: f.get("category"),
-      done: editing?.done || false,
-    });
-    if (!r.success) {
-      setError("Please add a task name, category and valid date.");
-      return;
-    }
+    const r = validation.parse(
+      taskSchema,
+      {
+        id: editing?.id || uid(),
+        title: f.get("title"),
+        date: f.get("date"),
+        category: f.get("category"),
+        done: editing?.done || false,
+      },
+      e.currentTarget,
+    );
+    if (!r) return;
     if (!editing && event.tasks.length >= 300) {
-      setError("You can keep up to 300 tasks per event.");
+      validation.fail("You can keep up to 300 tasks per event.");
       return;
     }
     onUpdate({
       ...event,
       tasks: editing
-        ? event.tasks.map((task) => (task.id === editing.id ? r.data : task))
-        : [...event.tasks, r.data],
+        ? event.tasks.map((task) => (task.id === editing.id ? r : task))
+        : [...event.tasks, r],
     });
     setAdding(false);
     notify(editing ? "Task updated." : "One little step added.");
@@ -70,7 +73,7 @@ export function Timeline({
             onClick={() => {
               setEditing(null);
               setAdding(true);
-              setError("");
+              validation.clear();
             }}
           >
             <Plus size={17} />
@@ -108,12 +111,14 @@ export function Timeline({
         </div>
       </section>
       <div className="filter-row" role="group" aria-label="Filter tasks">
-        {[
-          ["all", "All tasks"],
-          ["upcoming", "To do"],
-          ["overdue", "Overdue"],
-          ["completed", "Completed"],
-        ].map(([id, label]) => (
+        {(
+          [
+            ["all", "All tasks"],
+            ["upcoming", "To do"],
+            ["overdue", "Overdue"],
+            ["completed", "Completed"],
+          ] as const
+        ).map(([id, label]) => (
           <button
             aria-pressed={filter === id}
             key={id}
@@ -162,7 +167,7 @@ export function Timeline({
                 onClick={() => {
                   setEditing(task);
                   setAdding(true);
-                  setError("");
+                  validation.clear();
                 }}
               >
                 <Pencil size={16} />
@@ -200,6 +205,7 @@ export function Timeline({
                 Task name
                 <input
                   name="title"
+                  {...validation.input("title")}
 
                   required
                   maxLength={180}
@@ -211,6 +217,7 @@ export function Timeline({
                 Due date
                 <input
                   name="date"
+                  {...validation.input("date")}
                   type="date"
                   required
                   defaultValue={editing?.date || today()}
@@ -220,6 +227,7 @@ export function Timeline({
                 Category
                 <input
                   name="category"
+                  {...validation.input("category")}
                   required
                   maxLength={60}
                   defaultValue={editing?.category || "Planning"}
@@ -241,7 +249,7 @@ export function Timeline({
               </label>
             </div>
             {error && (
-              <p className="form-error" role="alert">
+              <p className="form-error" id={errorId} role="alert">
                 {error}
               </p>
             )}

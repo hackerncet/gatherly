@@ -99,3 +99,47 @@ test("unavailable or uninitialized storage fails without pretending data was sav
   await assert.rejects(() => repository.load());
   await repository.close();
 });
+
+test("a blocked opening is retryable and its late connection cannot poison the next opening", async () => {
+  const real = new IDBFactory();
+  let calls = 0;
+  const factory = {
+    open(...args) {
+      const request = real.open(...args);
+      if (++calls === 1)
+        queueMicrotask(() => request.onblocked?.(new Event("blocked")));
+      return request;
+    },
+  };
+  const repository = createWorkspaceRepository(factory, "blocked-recovery");
+  await assert.rejects(() => repository.load(makeWorkspace()), /Close older/);
+  const restored = await repository.load(makeWorkspace());
+  assert.equal(restored.workspace.events.length, 1);
+  assert.equal(calls, 2);
+  await repository.close();
+});
+
+test("a connection closed on versionchange is reopened before the next read", async () => {
+  const real = new IDBFactory();
+  let database;
+  let calls = 0;
+  const factory = {
+    open(...args) {
+      calls++;
+      const request = real.open(...args);
+      request.addEventListener("success", () => {
+        database = request.result;
+      });
+      return request;
+    },
+  };
+  const repository = createWorkspaceRepository(
+    factory,
+    "versionchange-recovery",
+  );
+  const first = await repository.load(makeWorkspace());
+  database.onversionchange();
+  assert.deepEqual(await repository.load(), first);
+  assert.equal(calls, 2);
+  await repository.close();
+});

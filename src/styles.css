@@ -4569,3 +4569,48 @@ td small.muted {
     margin-top: 10px;
   }
 }
+
+/* Preserve control boundaries and focus when the user enables high contrast. */
+@media (forced-colors: active) {
+  .button,
+  .icon-button,
+  .filter-button,
+  .model-picker,
+  .model-option,
+  .nav-item {
+    border: 1px solid ButtonText;
+  }
+  .nav-item.active,
+  [aria-pressed="true"],
+  .model-option.selected {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+  input,
+  textarea,
+  select {
+    border: 1px solid FieldText;
+  }
+  :focus-visible {
+    outline: 3px solid Highlight;
+  }
+  .table-progress {
+    border: 1px solid CanvasText;
+  }
+  .table-progress span,
+  .bar-color {
+    forced-color-adjust: none;
+  }
+}
+.workspace-operation {
+  position: fixed;
+  z-index: 1000;
+  inset: 40% auto auto 50%;
+  transform: translateX(-50%);
+  padding: 24px;
+  max-width: 90vw;
+  background: #fff;
+  color: #263e2d;
+  border: 2px solid currentColor;
+  border-radius: 12px;
+}

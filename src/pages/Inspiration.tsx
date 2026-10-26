@@ -1,3 +1,4 @@
+import { useFormValidation } from "../lib/useFormValidation";
 import { useState, type FormEvent } from "react";
 import {
   Bookmark,
@@ -28,27 +29,29 @@ export function Inspiration({
   const [filter, setFilter] = useState("all");
   const [adding, setAdding] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [error, setError] = useState("");
+  const validation = useFormValidation();
+  const { error, errorId } = validation;
   const ideas = event.ideas.filter((i) => filter === "all" || i.saved);
   function add(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    const r = ideaSchema.safeParse({
-      id: uid(),
-      title: f.get("title"),
-      detail: f.get("detail"),
-      tag: f.get("tag"),
-      saved: true,
-    });
-    if (!r.success) {
-      setError("Add a title, a description and a tag for your idea.");
-      return;
-    }
+    const r = validation.parse(
+      ideaSchema,
+      {
+        id: uid(),
+        title: f.get("title"),
+        detail: f.get("detail"),
+        tag: f.get("tag"),
+        saved: true,
+      },
+      e.currentTarget,
+    );
+    if (!r) return;
     if (event.ideas.length >= 100) {
-      setError("You can keep up to 100 ideas per event.");
+      validation.fail("You can keep up to 100 ideas per event.");
       return;
     }
-    onUpdate({ ...event, ideas: [...event.ideas, r.data] });
+    onUpdate({ ...event, ideas: [...event.ideas, r] });
     setAdding(false);
     notify("Your idea has a home.");
   }
@@ -63,7 +66,7 @@ export function Inspiration({
             className="button primary"
             onClick={() => {
               setAdding(true);
-              setError("");
+              validation.clear();
             }}
           >
             <Plus size={17} />
@@ -162,16 +165,28 @@ export function Inspiration({
             <div className="form-grid">
               <label className="span-2">
                 Idea title
-                <input name="title" required maxLength={160} />
+                <input
+                  name="title"
+                  {...validation.input("title")}
+                  required
+                  maxLength={160}
+                />
               </label>
               <label className="span-2">
                 The details
-                <textarea name="detail" required maxLength={600} rows={4} />
+                <textarea
+                  name="detail"
+                  {...validation.input("detail")}
+                  required
+                  maxLength={600}
+                  rows={4}
+                />
               </label>
               <label className="span-2">
                 Tag
                 <input
                   name="tag"
+                  {...validation.input("tag")}
                   required
                   maxLength={50}
                   defaultValue="Personal touch"
@@ -179,7 +194,7 @@ export function Inspiration({
               </label>
             </div>
             {error && (
-              <p role="alert" className="form-error">
+              <p role="alert" id={errorId} className="form-error">
                 {error}
               </p>
             )}

@@ -1,3 +1,4 @@
+import { useFormValidation } from "../lib/useFormValidation";
 import { useState, type FormEvent } from "react";
 import {
   Check,
@@ -25,7 +26,8 @@ export function Guests({
   const [deleting, setDeleting] = useState<string | null>(null);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
-  const [error, setError] = useState("");
+  const validation = useFormValidation();
+  const { error, errorId } = validation;
   const t = totals(event);
   const total = event.guestList.reduce((n, g) => n + g.count, 0);
   const guests = event.guestList.filter(
@@ -36,27 +38,28 @@ export function Guests({
   function save(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    const r = guestSchema.safeParse({
-      id: editing ? editing.id : uid(),
-      name: f.get("name"),
-      group: f.get("group"),
-      count: Number(f.get("count")),
-      rsvp: f.get("rsvp"),
-      dietary: f.get("dietary"),
-    });
-    if (!r.success) {
-      setError("Please check the name, group and party size (1–100).");
-      return;
-    }
+    const r = validation.parse(
+      guestSchema,
+      {
+        id: editing ? editing.id : uid(),
+        name: f.get("name"),
+        group: f.get("group"),
+        count: Number(f.get("count")),
+        rsvp: f.get("rsvp"),
+        dietary: f.get("dietary"),
+      },
+      e.currentTarget,
+    );
+    if (!r) return;
     if (!editing && event.guestList.length >= 1000) {
-      setError("You can keep up to 1,000 guest entries per event.");
+      validation.fail("You can keep up to 1,000 guest entries per event.");
       return;
     }
     onUpdate({
       ...event,
       guestList: editing
-        ? event.guestList.map((g) => (g.id === editing.id ? r.data : g))
-        : [...event.guestList, r.data],
+        ? event.guestList.map((g) => (g.id === editing.id ? r : g))
+        : [...event.guestList, r],
     });
     setEditing(false);
     notify("Guest details saved.");
@@ -94,7 +97,7 @@ export function Guests({
               className="button primary"
               onClick={() => {
                 setEditing(null);
-                setError("");
+                validation.clear();
               }}
             >
               <Plus size={17} />
@@ -226,7 +229,7 @@ export function Guests({
                           aria-label={`Edit ${g.name}`}
                           onClick={() => {
                             setEditing(g);
-                            setError("");
+                            validation.clear();
                           }}
                         >
                           <Pencil size={16} />
@@ -274,6 +277,7 @@ export function Guests({
                 Guest or household name
                 <input
                   name="name"
+                  {...validation.input("name")}
                   required
 
                   maxLength={100}
@@ -284,6 +288,7 @@ export function Guests({
                 Group
                 <input
                   name="group"
+                  {...validation.input("group")}
                   required
                   maxLength={60}
                   defaultValue={editing?.group || "Friends"}
@@ -293,6 +298,7 @@ export function Guests({
                 Party size
                 <input
                   name="count"
+                  {...validation.input("count")}
                   type="number"
                   required
                   min="1"
@@ -302,7 +308,11 @@ export function Guests({
               </label>
               <label className="span-2">
                 RSVP
-                <select name="rsvp" defaultValue={editing?.rsvp || "pending"}>
+                <select
+                  name="rsvp"
+                  {...validation.input("rsvp")}
+                  defaultValue={editing?.rsvp || "pending"}
+                >
                   <option value="pending">Pending</option>
                   <option value="confirmed">Confirmed</option>
                   <option value="declined">Declined</option>
@@ -313,6 +323,7 @@ export function Guests({
                 <span className="optional">optional</span>
                 <textarea
                   name="dietary"
+                  {...validation.input("dietary")}
                   maxLength={180}
                   rows={3}
                   defaultValue={editing?.dietary}
@@ -321,7 +332,7 @@ export function Guests({
               </label>
             </div>
             {error && (
-              <p role="alert" className="form-error">
+              <p role="alert" id={errorId} className="form-error">
                 {error}
               </p>
             )}

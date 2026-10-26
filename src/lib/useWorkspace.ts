@@ -4,15 +4,17 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type SetStateAction,
 } from "react";
 import { loadWorkspace, STORAGE_KEY } from "./storage";
 import { createWorkspaceRepository, WorkspaceConflict } from "./repository.ts";
+import { workspaceSchema } from "./schemas.ts";
 import type { Workspace } from "./types";
 
 export function useWorkspace() {
   const [legacy] = useState(loadWorkspace);
   const [repository] = useState(() => createWorkspaceRepository());
-  const [workspace, setWorkspace] = useState<Workspace>(legacy.workspace);
+  const [workspace, setWorkspaceState] = useState<Workspace>(legacy.workspace);
   const [ready, setReady] = useState(false);
   const [hasSavedData, setHasSavedData] = useState(false);
   const [warning, setWarning] = useState(legacy.warning);
@@ -26,14 +28,53 @@ export function useWorkspace() {
   const queue = useRef(Promise.resolve());
   const channel = useRef<BroadcastChannel | null>(null);
   const pending = useRef(0);
+  const operation = useRef(false);
+  const [busy, setBusy] = useState(false);
   useLayoutEffect(() => {
     current.current = workspace;
   }, [workspace]);
 
+  // Apply functional commands synchronously so validation failures reach the caller.
+  const installWorkspace = useCallback((action: SetStateAction<Workspace>) => {
+    const next = workspaceSchema.parse(
+      typeof action === "function" ? action(current.current) : action,
+    );
+    current.current = next;
+    setWorkspaceState(next);
+  }, []);
+  const setWorkspace = useCallback(
+    (action: SetStateAction<Workspace>) => {
+      if (operation.current)
+        throw new Error(
+          "Wait for the workspace operation to finish before editing.",
+        );
+      installWorkspace(action);
+    },
+    [installWorkspace],
+  );
+  const hasDraft = () =>
+    Boolean(
+      document.querySelector(
+        'dialog[open] form, [data-workspace-draft="true"]',
+      ),
+    );
+
   const reload = useCallback(async () => {
+    if (operation.current) return false;
     try {
+      if (hasDraft()) {
+        setWarning(
+          "Finish or cancel your open draft before loading saved data.",
+        );
+        return false;
+      }
+      operation.current = true;
+      setBusy(true);
+      const before = current.current;
       await queue.current;
       const record = await repository.load();
+      if (current.current !== before)
+        throw new Error("New edits are still in progress.");
       revision.current = record.revision;
       saved.current = JSON.stringify(record.workspace);
       stopped.current = false;
@@ -41,13 +82,18 @@ export function useWorkspace() {
       setWarning("");
       setStatus("Saved on your device");
       setHasSavedData(true);
-      setWorkspace(record.workspace);
+      installWorkspace(record.workspace);
+      return true;
     } catch {
       setWarning(
         "Saved data could not be opened. Your current edits are still available to export.",
       );
+      return false;
+    } finally {
+      operation.current = false;
+      setBusy(false);
     }
-  }, [repository]);
+  }, [repository, installWorkspace]);
 
   useEffect(() => {
     let active = true;
@@ -60,7 +106,7 @@ export function useWorkspace() {
         revision.current = record.revision;
         saved.current = JSON.stringify(record.workspace);
         stopped.current = false;
-        setWorkspace(record.workspace);
+        installWorkspace(record.workspace);
         setHasSavedData(true);
         setBlocked(false);
         setWarning("");
@@ -100,7 +146,7 @@ export function useWorkspace() {
     return () => {
       active = false;
     };
-  }, [repository, legacy]);
+  }, [repository, legacy, installWorkspace]);
 
   useEffect(() => {
     if (!ready || stopped.current) return;
@@ -143,7 +189,7 @@ export function useWorkspace() {
         if (
           pending.current ||
           JSON.stringify(current.current) !== saved.current ||
-          document.querySelector("dialog[open] form")
+          hasDraft()
         ) {
           stopped.current = true;
           setBlocked(true);
@@ -153,7 +199,7 @@ export function useWorkspace() {
         }
         revision.current = record.revision;
         saved.current = JSON.stringify(record.workspace);
-        setWorkspace(record.workspace);
+        installWorkspace(record.workspace);
         setStatus("Updated from another tab");
       } catch {
         /* Saving reports storage failures without discarding the current view. */
@@ -181,6 +227,7 @@ export function useWorkspace() {
       if (
         pending.current ||
         stopped.current ||
+        hasDraft() ||
         JSON.stringify(current.current) !== saved.current
       ) {
         event.preventDefault();
@@ -196,13 +243,19 @@ export function useWorkspace() {
       window.removeEventListener("storage", legacyChanged);
       window.removeEventListener("beforeunload", beforeUnload);
     };
-  }, [ready, repository]);
+  }, [ready, repository, installWorkspace]);
 
   const replace = useCallback(
     async (next: Workspace) => {
+      if (operation.current) return false;
+      operation.current = true;
+      setBusy(true);
       try {
+        const before = current.current;
         await queue.current;
         const record = await repository.load(next);
+        if (current.current !== before)
+          throw new Error("New edits are still in progress.");
         const committed = await repository.save(next, record.revision);
         revision.current = committed.revision;
         saved.current = JSON.stringify(committed.workspace);
@@ -211,7 +264,7 @@ export function useWorkspace() {
         setWarning("");
         setStatus("Saved on your device");
         setHasSavedData(true);
-        setWorkspace(committed.workspace);
+        installWorkspace(committed.workspace);
         setRecovery(undefined);
         channel.current?.postMessage({ revision: committed.revision });
         // Remove only the old migration copy after an explicit recovery/import replacement.
@@ -220,16 +273,22 @@ export function useWorkspace() {
         } catch {
           /* Database remains the source of truth. */
         }
+        return true;
       } catch {
         setWarning(
           "Replacement could not be saved. Export your current workspace and try again.",
         );
+        return false;
+      } finally {
+        operation.current = false;
+        setBusy(false);
       }
     },
-    [repository],
+    [repository, installWorkspace],
   );
   return {
     workspace,
+    busy,
     setWorkspace,
     ready,
     warning,
