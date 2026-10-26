@@ -13,7 +13,7 @@ npm ci
 npm run dev
 ```
 
-Open `http://localhost:3000`. For the production version:
+Open `http://localhost:3000`. Development watches the frontend and writes external assets; reload the page after a rebuild. It enforces CSP without inline Vite scripts or injected styles. Restart the command after server-side edits. For the production version:
 
 ```sh
 npm run build

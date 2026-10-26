@@ -374,6 +374,30 @@ test("catalog failure returns a clearly identified fallback", () =>
       assert.equal(data.models[0].id, "openrouter/free");
     },
   ));
+
+test("page file serving is throttled without preventing a health probe", () =>
+  run({ env, rateLimits: true }, async (base) => {
+    for (let count = 0; count < 180; count++) {
+      const response = await fetch(`${base}/favicon.svg`);
+      assert.equal(response.status, 200);
+      await response.arrayBuffer();
+    }
+    const blocked = await fetch(`${base}/favicon.svg`);
+    assert.equal(blocked.status, 429);
+    assert.ok(blocked.headers.has("retry-after"));
+    assert.equal((await fetch(`${base}/api/health`)).status, 200);
+  }));
+
+test("development keeps CSP enforcement while allowing the local HTTP origin", () =>
+  run({ env: { ...env, NODE_ENV: "development" } }, async (base) => {
+    const response = await fetch(`${base}/api/health`);
+    const policy = response.headers.get("content-security-policy");
+    assert.match(policy, /style-src 'self'/);
+    assert.doesNotMatch(
+      policy,
+      /unsafe-inline|unsafe-eval|upgrade-insecure-requests/,
+    );
+  }));
 test("rejects unavailable model IDs", () =>
   run({ env, fetchImpl: mockFetch() }, async (base) => {
     assert.equal(

@@ -156,7 +156,9 @@ test("brief export escapes HTML and link instructions and orders the agenda chro
     { id: "early", time: "10:00", title: "Earlier", owner: "" },
   ];
   const text = eventBrief(event);
-  assert.doesNotMatch(text, /<script>|\[Click\]\(|\n# forged/);
+  assert.equal(text.includes("<script>"), false);
+  assert.equal(text.includes("[Click]("), false);
+  assert.equal(text.includes("\n# forged"), false);
   assert.match(text, /&lt;script&gt;/);
   assert.ok(text.indexOf("10:00") < text.indexOf("16:00"));
 });

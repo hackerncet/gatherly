@@ -1,7 +1,4 @@
-import express, {
-  type ErrorRequestHandler,
-  type RequestHandler,
-} from "express";
+import express, { type ErrorRequestHandler } from "express";
 import helmet from "helmet";
 import { rateLimit } from "express-rate-limit";
 import { resolve } from "node:path";
@@ -13,14 +10,12 @@ interface AppOptions {
   fetchImpl?: typeof fetch;
   staticDir?: string;
   rateLimits?: boolean;
-  devMiddleware?: RequestHandler | null;
 }
 export function createApp({
   env = process.env,
   fetchImpl = fetch,
   staticDir = resolve("dist"),
   rateLimits = true,
-  devMiddleware = null,
 }: AppOptions = {}) {
   const app = express();
   app.disable("x-powered-by");
@@ -28,25 +23,23 @@ export function createApp({
   app.set("trust proxy", env.NODE_ENV === "production" ? 1 : false);
   app.use(
     helmet({
-      contentSecurityPolicy:
-        env.NODE_ENV === "development"
-          ? false
-          : {
-              directives: {
-                defaultSrc: ["'self'"],
-                scriptSrc: ["'self'"],
-                styleSrc: ["'self'"],
-                styleSrcAttr: ["'none'"],
-                frameSrc: ["'none'"],
-                imgSrc: ["'self'", "data:"],
-                fontSrc: ["'self'"],
-                connectSrc: ["'self'"],
-                objectSrc: ["'none'"],
-                baseUri: ["'none'"],
-                frameAncestors: ["'none'"],
-                formAction: ["'self'"],
-              },
-            },
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'"],
+          styleSrc: ["'self'"],
+          styleSrcAttr: ["'none'"],
+          frameSrc: ["'none'"],
+          imgSrc: ["'self'", "data:"],
+          fontSrc: ["'self'"],
+          connectSrc: ["'self'"],
+          objectSrc: ["'none'"],
+          baseUri: ["'none'"],
+          frameAncestors: ["'none'"],
+          formAction: ["'self'"],
+          upgradeInsecureRequests: env.NODE_ENV === "development" ? null : [],
+        },
+      },
       referrerPolicy: { policy: "no-referrer" },
     }),
   );
@@ -107,18 +100,26 @@ export function createApp({
   app.use("/api", (_req, res) =>
     res.status(404).json({ error: "Endpoint not found." }),
   );
-  if (devMiddleware) app.use(devMiddleware);
-  app.use(
-    express.static(staticDir, {
-      maxAge: "1h",
-      setHeaders: (res, path) => {
-        if (path.endsWith(".html")) res.set("Cache-Control", "no-cache");
-        else if (path.includes("/assets/"))
-          res.set("Cache-Control", "public, max-age=31536000, immutable");
-      },
-    }),
-  );
-  app.get("/{*path}", (req, res, next) => {
+  const assetLimiter = rateLimit({
+    windowMs: 60000,
+    limit: 180,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+    skip: () => !rateLimits,
+    message: {
+      error:
+        "Too many page requests. Please wait a moment before trying again.",
+    },
+  });
+  const staticFiles = express.static(staticDir, {
+    maxAge: "1h",
+    setHeaders: (res, path) => {
+      if (path.endsWith(".html")) res.set("Cache-Control", "no-cache");
+      else if (path.includes("/assets/"))
+        res.set("Cache-Control", "public, max-age=31536000, immutable");
+    },
+  });
+  app.get("/{*path}", assetLimiter, staticFiles, (req, res, next) => {
     if (req.path.includes(".")) return res.sendStatus(404);
     res.sendFile(resolve(staticDir, "index.html"), (error) => {
       if (error) next(error);

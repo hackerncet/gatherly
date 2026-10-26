@@ -60,7 +60,7 @@ Generation previews retain the exact brief used for the request. Cancelling or
 unmounting ignores late successes even when a mocked provider ignores abort.
 The navigation prompt is read without side effects during StrictMode initialization.
 
-The complete local release checks have 115 passing core tests and 45 passing UI
+The complete local release checks have 117 passing core tests and 45 passing UI
 checks. Full measurements and scope are in [QUALITY.md](../QUALITY.md). The core
 coverage gate was raised to 95% lines/90% branches/90% functions. UI coverage
 expanded from four modules to the complete application UI and hooks, with
@@ -95,3 +95,22 @@ was `../results`, while the gate expected `results`. The workflow now explicitly
 sets `output: results`. The failed gate was not bypassed or counted as a clean
 scan. GitHub Actions checkout/setup-node/artifact pins were also updated to the
 verified current stable releases, removing Node 20 action deprecation warnings.
+
+### CodeQL findings resolved without suppressions
+
+The strict SARIF gate identified three results in run
+[40271483611](https://github.com/hackerncet/gatherly/actions/runs/40271483611):
+
+- `js/missing-rate-limiting`: file-serving routes now explicitly use a 180/minute
+  per-IP limiter. Regression checks verify the 181st request is rejected and a
+  health probe remains available.
+- `js/insecure-helmet-configuration`: development no longer disables CSP. Vite
+  now watches external build assets served by the same Express application.
+  A spawned development-server check returned HTTP 200 for HTML, JS and CSS,
+  with enforced CSP and no inline scripts or unsafe-inline allowance.
+- `js/bad-tag-filter`: an HTML assertion in an export test used a regex that
+  resembled an incomplete HTML sanitizer. It now checks exact string inclusion
+  separately; production escaping remains unchanged.
+
+No CodeQL rule was excluded, muted or accepted as a release exception. The next
+scan must satisfy the existing zero-findings gate before merge.
