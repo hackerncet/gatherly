@@ -40,6 +40,7 @@ test("budget category validation focuses the associated field; add, edit and con
     "true",
   );
   const alert = screen.getByRole("alert");
+  expect(alert).toHaveTextContent("This field cannot be blank.");
   expect(screen.getByLabelText("Category")).toHaveAttribute(
     "aria-describedby",
     alert.id,
