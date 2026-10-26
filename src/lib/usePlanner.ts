@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { eventFromPlan, starterPlan } from "./domain.ts";
+import { eventFromPlan } from "./events.ts";
+import { starterPlan } from "./templates.ts";
 import { apiJson, planResponseSchema } from "./api.ts";
 import type { Brief, Event, Plan } from "./types";
 

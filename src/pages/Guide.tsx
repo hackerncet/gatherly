@@ -1,5 +1,8 @@
-import { useFormValidation } from "../lib/useFormValidation";
-import { useMemo, useState, type FormEvent } from "react";
+import { RECORD_LIMITS } from "../lib/limits";
+import { AgendaEditor } from "../components/editors/AgendaEditor";
+import { useEventRecords } from "../lib/useEventRecords";
+import type { EventPageProps } from "../lib/commands";
+import { useMemo, useState } from "react";
 import {
   CalendarDays,
   ClipboardList,
@@ -8,60 +11,31 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import { Modal, PageHeading, Empty, Confirm } from "../components/ui";
-import { today, uid, agendaItemSchema } from "../lib/domain.ts";
+import { Confirm } from "../components/Confirm";
+import { PageHeading, Empty } from "../components/ui";
+import { today } from "../lib/dates.ts";
 import { planningInsights, calendarFile, eventBrief } from "../lib/planning.ts";
 import { DownloadLink } from "../components/DownloadLink";
 import { dateLabel } from "../lib/storage";
 import type { Event, Page } from "../lib/types";
 
-type AgendaItem = Event["agenda"][number];
 export function Guide({
   event,
   onUpdate,
   navigate,
   notify,
-}: {
-  event: Event;
-  onUpdate: (event: Event) => void;
-  navigate: (page: Page) => void;
-  notify: (message: string) => void;
-}) {
-  const [editing, setEditing] = useState<AgendaItem | null>(null);
-  const [deleting, setDeleting] = useState<AgendaItem | null>(null);
-  const validation = useFormValidation();
+}: EventPageProps & { navigate: (page: Page) => void }) {
+  const records = useEventRecords("agenda", onUpdate, notify);
+  const [deleting, setDeleting] = useState<Event["agenda"][number] | null>(
+    null,
+  );
   const risks = planningInsights(event, today());
   const calendar = useMemo(() => calendarFile(event), [event]);
   const brief = useMemo(() => eventBrief(event), [event]);
   const ordered = [...event.agenda].sort((a, b) =>
     a.time.localeCompare(b.time),
   );
-  function save(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!editing) return;
-    const values = new FormData(e.currentTarget);
-    const parsed = validation.parse(
-      agendaItemSchema,
-      {
-        id: editing.id,
-        time: values.get("time"),
-        title: values.get("title"),
-        owner: values.get("owner"),
-      },
-      e.currentTarget,
-    );
-    if (!parsed) return;
-    const updated = parsed;
-    const exists = event.agenda.some((a) => a.id === updated.id);
-    onUpdate({
-      ...event,
-      agenda: exists
-        ? event.agenda.map((a) => (a.id === updated.id ? updated : a))
-        : [...event.agenda, updated],
-    });
-    setEditing(null);
-    notify("Event-day schedule updated.");
-  }
+
   return (
     <>
       <PageHeading
@@ -120,11 +94,8 @@ export function Guide({
             </div>
             <button
               className="button primary"
-              disabled={event.agenda.length >= 50}
-              onClick={() => {
-                validation.clear();
-                setEditing({ id: uid(), time: "10:00", title: "", owner: "" });
-              }}
+              disabled={event.agenda.length >= RECORD_LIMITS.agenda}
+              onClick={records.create}
             >
               <Plus size={17} />
               Add moment
@@ -142,10 +113,7 @@ export function Guide({
                   <button
                     className="icon-button"
                     aria-label={`Edit ${a.title}`}
-                    onClick={() => {
-                      validation.clear();
-                      setEditing(a);
-                    }}
+                    onClick={() => records.edit(a)}
                   >
                     <Pencil size={16} />
                   </button>
@@ -189,77 +157,23 @@ export function Guide({
           </p>
         </div>
       </section>
-      {editing && (
-        <Modal
-          title={
-            event.agenda.some((a) => a.id === editing.id)
-              ? "Edit this moment"
-              : "Add a moment"
+      {records.isOpen && (
+        <AgendaEditor
+          initial={records.initial}
+          onSave={(record) =>
+            records.save(record, "Event-day schedule updated.")
           }
-          onClose={() => setEditing(null)}
-        >
-          <form onSubmit={save}>
-            <label>
-              Time at the venue
-              <input
-                type="time"
-                required
-                name="time"
-                {...validation.input("time")}
-                defaultValue={editing.time}
-              />
-            </label>
-            <label>
-              What is happening?
-              <input
-                required
-                maxLength={160}
-                name="title"
-                {...validation.input("title")}
-                defaultValue={editing.title}
-              />
-            </label>
-            <label>
-              Responsible person or team
-              <input
-                maxLength={100}
-                name="owner"
-                {...validation.input("owner")}
-                defaultValue={editing.owner}
-              />
-            </label>
-            {validation.error && (
-              <p className="form-error" role="alert" id={validation.errorId}>
-                {validation.error}
-              </p>
-            )}
-            <div className="modal-actions">
-              <button
-                type="button"
-                className="button secondary"
-                onClick={() => setEditing(null)}
-              >
-                Cancel
-              </button>
-              <button className="button primary" type="submit">
-                Save moment
-              </button>
-            </div>
-          </form>
-        </Modal>
+          onClose={records.close}
+        />
       )}
       {deleting && (
         <Confirm
           title="Remove this moment?"
           description={`Remove “${deleting.title}” from your event-day schedule.`}
           onClose={() => setDeleting(null)}
-          onConfirm={() => {
-            onUpdate({
-              ...event,
-              agenda: event.agenda.filter((a) => a.id !== deleting.id),
-            });
-            notify("Schedule item removed.");
-          }}
+          onConfirm={() =>
+            records.remove(deleting.id, "Schedule item removed.")
+          }
         />
       )}
     </>

@@ -1,3 +1,4 @@
+import { COMMAND_OK, type EventChange } from "../../src/lib/commands";
 import { useState } from "react";
 import { expect, test, vi } from "vitest";
 import { render, screen, fireEvent, within } from "@testing-library/react";
@@ -17,7 +18,11 @@ function Records({
   page: "budget" | "timeline" | "vendors" | "guests" | "inspiration";
   initial?: Event;
 }) {
-  const [event, onUpdate] = useState(initial);
+  const [event, setEvent] = useState(initial);
+  const onUpdate = (change: EventChange) => {
+    setEvent(change);
+    return COMMAND_OK;
+  };
   const common = { event, onUpdate, notify: vi.fn() };
   return {
     budget: <BudgetPage {...common} />,

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { workspaceSchema } from "./domain.ts";
+import { workspaceSchema } from "./schemas.ts";
 import type { Workspace } from "./types.ts";
 
 const recordSchema = z.object({
@@ -18,9 +18,16 @@ export class WorkspaceConflict extends Error {
   }
 }
 
+// DOM declarations assume IndexedDB exists; browsers may disable or omit it.
+function availableDatabase(
+  environment: { indexedDB?: IDBFactory } = globalThis,
+) {
+  return environment.indexedDB;
+}
+
 /** IndexedDB serializes read/write transactions across tabs: compare and write are atomic. */
 export function createWorkspaceRepository(
-  factory: IDBFactory = globalThis.indexedDB,
+  factory: IDBFactory | undefined = availableDatabase(),
   name = "gatherly.local.v2",
 ) {
   let connection: Promise<IDBDatabase> | undefined;

@@ -1,4 +1,5 @@
-import { shiftDate, totals } from "./domain.ts";
+import { shiftDate } from "./dates.ts";
+import { totals } from "./events.ts";
 import type { Event } from "./types";
 
 export function planningInsights(event: Event, now: string) {

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { Model } from "../src/lib/types.ts";
-import { aiPlanSchema } from "../src/lib/domain.ts";
+import { aiPlanSchema } from "../src/lib/schemas.ts";
 import { normalizeModelPrice } from "../src/lib/models.ts";
 import { allocatePlanBudget, providerPlanSchema } from "./allocation.ts";
 

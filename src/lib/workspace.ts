@@ -4,6 +4,8 @@ import {
   type Event,
   type Workspace,
 } from "./schemas.ts";
+import { MAX_EVENTS } from "./limits.ts";
+import type { EventChange } from "./commands.ts";
 
 /** A valid workspace always contains an event; fail explicitly if an invariant breaks. */
 export function activeEvent(workspace: Workspace): Event {
@@ -36,7 +38,7 @@ export function appendWorkspaceEvent(
   workspace: Workspace,
   event: Event,
 ): Workspace {
-  if (workspace.events.length >= 30)
+  if (workspace.events.length >= MAX_EVENTS)
     throw new Error(
       "You can keep up to 30 events. Export and remove an old event first.",
     );
@@ -45,6 +47,23 @@ export function appendWorkspaceEvent(
     events: [...workspace.events, event],
     activeId: event.id,
   });
+}
+
+/** Bind a command to its event ID and apply it to the latest workspace snapshot. */
+export function changeWorkspaceEvent(
+  workspace: Workspace,
+  id: string,
+  change: EventChange,
+): Workspace {
+  const current = workspace.events.find((event) => event.id === id);
+  if (!current)
+    throw new Error(
+      "This event is no longer in the workspace. Your change was not applied.",
+    );
+  const next = change(current);
+  if (next.id !== id)
+    throw new Error("An edit cannot replace an event's identifier.");
+  return updateWorkspaceEvent(workspace, next);
 }
 
 export function removeWorkspaceEvent(

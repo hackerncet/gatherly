@@ -11,7 +11,8 @@ import {
   Sparkles,
   WandSparkles,
 } from "lucide-react";
-import { Botanical, PageHeading } from "../components/ui";
+import { Botanical } from "../components/Botanical";
+import { PageHeading } from "../components/ui";
 import { money } from "../lib/storage";
 import { useModelCatalog } from "../lib/useModelCatalog";
 import { usePlanner } from "../lib/usePlanner";

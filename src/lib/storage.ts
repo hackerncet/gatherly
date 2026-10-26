@@ -1,4 +1,6 @@
-import { eventFromPlan, shiftDate, today, workspaceSchema } from "./domain.ts";
+import { eventFromPlan } from "./events.ts";
+import { shiftDate, today } from "./dates.ts";
+import { workspaceSchema } from "./schemas.ts";
 import { activeEvent } from "./workspace.ts";
 import type { Brief, Workspace } from "./types";
 export const STORAGE_KEY = "gatherly.workspace.v1";
@@ -106,7 +108,7 @@ export function loadWorkspace(): {
   } catch {
     return {
       workspace: demoWorkspace(),
-      recovery: raw || undefined,
+      ...(raw ? { recovery: raw } : {}),
       warning:
         "Your saved workspace could not be read. It has not been overwritten. Export a backup before choosing to replace it.",
     };

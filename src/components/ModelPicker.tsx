@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Check, RefreshCw } from "lucide-react";
-import { Modal } from "./ui";
+import { Modal } from "./Modal";
 import { hasKnownPricing } from "../lib/models";
 import type { Model } from "../lib/types";
 export function ModelPicker({

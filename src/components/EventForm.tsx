@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Heart, Cake, Users, ArrowRight } from "lucide-react";
-import { briefSchema, shiftDate, today } from "../lib/domain.ts";
+import { briefSchema } from "../lib/schemas.ts";
+import { shiftDate, today } from "../lib/dates.ts";
 import { useFormValidation } from "../lib/useFormValidation";
 import type { Brief, EventType } from "../lib/types";
 export const eventTypes = [

@@ -13,24 +13,20 @@ export const healthSchema = z.object({
   version: z.string(),
   storage: z.string(),
 });
+export const modelSchema = z.object({
+  id: z.string().max(160),
+  name: z.string().max(300),
+  free: z.boolean(),
+  contextLength: z.number().nonnegative(),
+  inputPrice: z.string().max(100),
+  outputPrice: z.string().max(100),
+  supportsJson: z.boolean().optional(),
+  supportsSchema: z.boolean().optional(),
+  reasoningMode: z.enum(["off", "low"]).optional(),
+});
 export const catalogSchema = z.object({
   source: z.enum(["live", "cached", "fallback"]),
-  models: z
-    .array(
-      z.object({
-        id: z.string().max(160),
-        name: z.string().max(300),
-        free: z.boolean(),
-        contextLength: z.number().nonnegative(),
-        inputPrice: z.string().max(100),
-        outputPrice: z.string().max(100),
-        supportsJson: z.boolean().optional(),
-        supportsSchema: z.boolean().optional(),
-        reasoningMode: z.enum(["off", "low"]).optional(),
-      }),
-    )
-    .min(1)
-    .max(5000),
+  models: z.array(modelSchema).min(1).max(5000),
 });
 export const planResponseSchema = z.object({
   source: z.enum(["ai", "template"]),
@@ -43,4 +39,4 @@ export const planRequestSchema = z.object({
   model: z.string().trim().min(1).max(160),
   prompt: z.string().trim().max(1600).default(""),
 });
-export const APP_VERSION = "1.2.0";
+export const APP_VERSION = "1.3.0";

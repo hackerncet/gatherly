@@ -1,3 +1,4 @@
+import type { EventChange, CommandResult } from "../../src/lib/commands";
 import { expect, test, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -53,13 +54,16 @@ test("model search, free filter and selection expose the exact chosen route", as
 
 test("overview actions route to the relevant planning view and retain independent task records", async () => {
   const event = makeEvent(),
-    update = vi.fn(),
+    update = vi.fn<(change: EventChange) => CommandResult>(() => ({
+      ok: true,
+    })),
     navigate = vi.fn(),
     edit = vi.fn();
   render(
     <Overview
       event={event}
       onUpdate={update}
+      notify={vi.fn()}
       navigate={navigate}
       onEdit={edit}
     />,
@@ -67,7 +71,7 @@ test("overview actions route to the relevant planning view and retain independen
   const user = userEvent.setup();
   await user.click(screen.getAllByRole("checkbox")[0]!);
   expect(
-    update.mock.calls[0]![0].tasks.filter(
+    update.mock.calls[0]![0](event).tasks.filter(
       (task: { done: boolean }) => task.done,
     ),
   ).toHaveLength(1);

@@ -1,7 +1,9 @@
 import { dateSchema } from "./schemas.ts";
-export function uid() {
-  if (globalThis.crypto.randomUUID) return globalThis.crypto.randomUUID();
-  const bytes = globalThis.crypto.getRandomValues(new Uint8Array(16));
+type IdentifierCrypto = Pick<Crypto, "getRandomValues"> &
+  Partial<Pick<Crypto, "randomUUID">>;
+export function uid(provider: IdentifierCrypto = globalThis.crypto) {
+  if (provider.randomUUID) return provider.randomUUID();
+  const bytes = provider.getRandomValues(new Uint8Array(16));
   bytes[6] = ((bytes[6] ?? 0) & 15) | 64;
   bytes[8] = ((bytes[8] ?? 0) & 63) | 128;
   const hex = [...bytes].map((b) => b.toString(16).padStart(2, "0")).join("");

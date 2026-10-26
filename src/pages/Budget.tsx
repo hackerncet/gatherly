@@ -1,5 +1,7 @@
-import { useFormValidation } from "../lib/useFormValidation";
-import { useState, type FormEvent } from "react";
+import { BudgetEditor } from "../components/editors/BudgetEditor";
+import { useEventRecords } from "../lib/useEventRecords";
+import type { EventPageProps } from "../lib/commands";
+import { useState } from "react";
 import {
   Download,
   Pencil,
@@ -8,51 +10,15 @@ import {
   Wallet,
   CircleAlert,
 } from "lucide-react";
-import { Confirm, Empty, Modal, PageHeading } from "../components/ui";
-import { budgetSchema, escapeCsv, totals, uid } from "../lib/domain.ts";
+import { Confirm } from "../components/Confirm";
+import { Empty, PageHeading } from "../components/ui";
+import { escapeCsv, totals } from "../lib/events.ts";
 import { downloadFile, money } from "../lib/storage";
-import type { Budget, Event } from "../lib/types";
-export function BudgetPage({
-  event,
-  onUpdate,
-  notify,
-}: {
-  event: Event;
-  onUpdate: (e: Event) => void;
-  notify: (s: string) => void;
-}) {
-  const [editing, setEditing] = useState<Budget | null | false>(false);
+export function BudgetPage({ event, onUpdate, notify }: EventPageProps) {
+  const records = useEventRecords("budgets", onUpdate, notify);
   const [deleting, setDeleting] = useState<string | null>(null);
-  const validation = useFormValidation();
-  const { error, errorId } = validation;
   const t = totals(event);
-  function save(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const f = new FormData(e.currentTarget);
-    const parsed = validation.parse(
-      budgetSchema,
-      {
-        id: editing ? editing.id : uid(),
-        category: f.get("category"),
-        planned: Number(f.get("planned")),
-        paid: Number(f.get("paid")),
-      },
-      e.currentTarget,
-    );
-    if (!parsed) return;
-    if (!editing && event.budgets.length >= 100) {
-      validation.fail("You can add up to 100 budget categories.");
-      return;
-    }
-    onUpdate({
-      ...event,
-      budgets: editing
-        ? event.budgets.map((b) => (b.id === editing.id ? parsed : b))
-        : [...event.budgets, parsed],
-    });
-    setEditing(false);
-    notify("Budget updated.");
-  }
+
   function exportCsv() {
     const rows = [
       ["Category", "Planned", "Paid", "Remaining", "Currency"],
@@ -83,13 +49,7 @@ export function BudgetPage({
               <Download size={16} />
               Export
             </button>
-            <button
-              className="button primary"
-              onClick={() => {
-                setEditing(null);
-                validation.clear();
-              }}
-            >
+            <button className="button primary" onClick={records.create}>
               <Plus size={17} />
               Add category
             </button>
@@ -194,10 +154,7 @@ export function BudgetPage({
                         <button
                           className="icon-button"
                           aria-label={`Edit ${b.category}`}
-                          onClick={() => {
-                            setEditing(b);
-                            validation.clear();
-                          }}
+                          onClick={() => records.edit(b)}
                         >
                           <Pencil size={16} />
                         </button>
@@ -240,81 +197,20 @@ export function BudgetPage({
           are planning estimates until you confirm real quotes.
         </p>
       </div>
-      {editing !== false && (
-        <Modal
-          title={editing ? "Edit budget category" : "A place for every penny"}
-          onClose={() => setEditing(false)}
-        >
-          <form onSubmit={save}>
-            <div className="form-grid">
-              <label className="span-2">
-                Category
-                <input
-                  name="category"
-                  {...validation.input("category")}
-                  required
-                  maxLength={80}
-
-                  defaultValue={editing?.category || ""}
-                />
-              </label>
-              <label>
-                Planned ({event.currency})
-                <input
-                  name="planned"
-                  {...validation.input("planned")}
-                  type="number"
-                  min="0"
-                  max="1000000000"
-                  step="1"
-                  required
-                  defaultValue={editing?.planned || 0}
-                />
-              </label>
-              <label>
-                Paid ({event.currency})
-                <input
-                  name="paid"
-                  {...validation.input("paid")}
-                  type="number"
-                  min="0"
-                  max="1000000000"
-                  step="1"
-                  required
-                  defaultValue={editing?.paid || 0}
-                />
-              </label>
-            </div>
-            {error && (
-              <p role="alert" id={errorId} className="form-error">
-                {error}
-              </p>
-            )}
-            <div className="modal-actions">
-              <button
-                type="button"
-                className="button secondary"
-                onClick={() => setEditing(false)}
-              >
-                Cancel
-              </button>
-              <button className="button primary">Save category</button>
-            </div>
-          </form>
-        </Modal>
+      {records.isOpen && (
+        <BudgetEditor
+          initial={records.initial}
+          onSave={(record) => records.save(record, "Budget updated.")}
+          onClose={records.close}
+          currency={event.currency}
+        />
       )}
       {deleting && (
         <Confirm
           title="Remove this category?"
           description="Its planned amount and payment record will be deleted. Your total event budget will stay the same."
           onClose={() => setDeleting(null)}
-          onConfirm={() => {
-            onUpdate({
-              ...event,
-              budgets: event.budgets.filter((b) => b.id !== deleting),
-            });
-            notify("Category removed.");
-          }}
+          onConfirm={() => records.remove(deleting, "Category removed.")}
         />
       )}
     </>

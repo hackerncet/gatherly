@@ -4,7 +4,7 @@ import { planRequestSchema } from "../src/lib/contracts.ts";
 import { starterPlan } from "../src/lib/templates.ts";
 import {
   API,
-  createModelCatalog,
+  type createModelCatalog,
   readJson,
   completionParameters,
   readPlan,

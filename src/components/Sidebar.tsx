@@ -5,7 +5,7 @@ import {
   Settings,
   Sparkles,
 } from "lucide-react";
-import { Logo } from "./ui";
+import { Logo } from "./Logo";
 import { WorkspaceNavigation } from "./WorkspaceNavigation";
 import type { Page } from "../lib/types";
 export function Sidebar({

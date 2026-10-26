@@ -1,7 +1,8 @@
 import { lazy, Suspense } from "react";
-import { Logo } from "./ui";
+import { Logo } from "./Logo";
 import { Overview } from "../pages/Overview";
 import type { Event, Page, Workspace } from "../lib/types";
+import type { UpdateEvent } from "../lib/commands";
 const Guide = lazy(() =>
   import("../pages/Guide").then((m) => ({ default: m.Guide })),
 );
@@ -46,7 +47,7 @@ export function WorkspacePages({
   page: Page;
   event: Event;
   workspace: Workspace;
-  updateEvent: (event: Event) => void;
+  updateEvent: UpdateEvent;
   navigate: (page: Page) => void;
   addEvent: (event: Event) => void;
   notify: (message: string) => void;
@@ -63,6 +64,7 @@ export function WorkspacePages({
         onUpdate={updateEvent}
         navigate={navigate}
         onEdit={onEdit}
+        notify={notify}
       />
     ),
     budget: <BudgetPage {...common} />,

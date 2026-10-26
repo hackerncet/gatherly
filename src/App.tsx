@@ -1,3 +1,5 @@
+import { ToastNotification } from "./components/ToastNotification";
+import { useToast } from "./lib/useToast";
 import { Sidebar } from "./components/Sidebar";
 import { WorkspaceNavigation } from "./components/WorkspaceNavigation";
 import { WorkspaceHeader } from "./components/WorkspaceHeader";
@@ -5,20 +7,28 @@ import { WorkspacePages } from "./components/WorkspacePages";
 import { pageFromHash, pageTitles } from "./lib/navigation";
 import {
   activeEvent,
-  updateWorkspaceEvent,
+  changeWorkspaceEvent,
   appendWorkspaceEvent,
   removeWorkspaceEvent,
 } from "./lib/workspace";
 import { useEffect, useRef, useState } from "react";
-import { Settings, Plus, Check, ShieldCheck, Download } from "lucide-react";
-import { Logo, Modal, Confirm } from "./components/ui";
+import { Settings, Plus, ShieldCheck, Download } from "lucide-react";
+import { Logo } from "./components/Logo";
+import { Modal } from "./components/Modal";
+import { Confirm } from "./components/Confirm";
 import { EventForm } from "./components/EventForm";
-import { eventFromPlan, reviseEvent } from "./lib/domain.ts";
+import { eventFromPlan, reviseEvent } from "./lib/events.ts";
 import { downloadFile } from "./lib/storage";
 import { PageBoundary } from "./components/PageBoundary";
 import { useServiceStatus } from "./lib/useServiceStatus";
 import { useWorkspace } from "./lib/useWorkspace";
 import type { Brief, Event, Page } from "./lib/types";
+import {
+  COMMAND_OK,
+  commandFailure,
+  type CommandResult,
+  type EventChange,
+} from "./lib/commands";
 export default function App() {
   const {
     workspace,
@@ -37,13 +47,12 @@ export default function App() {
   const [modal, setModal] = useState<
     "create" | "edit" | "menu" | "help" | null
   >(null);
-  const [toast, setToast] = useState("");
+  const { toast, notify } = useToast();
   const [search, setSearch] = useState("");
   const [deleting, setDeleting] = useState(false);
   const service = useServiceStatus();
 
   const headingRef = useRef<HTMLElement>(null);
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const event = activeEvent(workspace);
   useEffect(() => {
     document.title = `${pageTitles[page]} · Gatherly`;
@@ -57,14 +66,8 @@ export default function App() {
     window.addEventListener("hashchange", update);
     return () => {
       window.removeEventListener("hashchange", update);
-      if (toastTimer.current) clearTimeout(toastTimer.current);
     };
   }, []);
-  function notify(message: string) {
-    setToast(message);
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(""), 4500);
-  }
   function navigate(next: Page) {
     setPage(next);
     location.hash = next;
@@ -72,17 +75,12 @@ export default function App() {
     setModal(null);
     window.scrollTo({ top: 0, behavior: "instant" });
   }
-  function updateEvent(next: Event) {
+  function updateEvent(change: EventChange): CommandResult {
     try {
-      setWorkspace((w) => updateWorkspaceEvent(w, next));
-      return true;
+      setWorkspace((w) => changeWorkspaceEvent(w, event.id, change));
+      return COMMAND_OK;
     } catch (error) {
-      notify(
-        error instanceof Error
-          ? error.message
-          : "This change could not be applied.",
-      );
-      return false;
+      return commandFailure(error, "This change could not be applied.");
     }
   }
   function addEvent(next: Event) {
@@ -93,6 +91,7 @@ export default function App() {
         error instanceof Error
           ? error.message
           : "This event could not be added.",
+        "error",
       );
       return;
     }
@@ -101,12 +100,11 @@ export default function App() {
   }
   function saveBrief(brief: Brief, shiftTimeline = true) {
     if (modal === "edit") {
-      try {
-        if (!updateEvent(reviseEvent(event, brief, shiftTimeline))) return;
-      } catch {
-        notify(
-          "These dates could not be moved. Check the event date or keep your existing task dates.",
-        );
+      const result = updateEvent((current) =>
+        reviseEvent(current, brief, shiftTimeline),
+      );
+      if (!result.ok) {
+        notify(result.error, "error");
         return;
       }
       setModal(null);
@@ -321,29 +319,14 @@ export default function App() {
             try {
               setWorkspace((w) => removeWorkspaceEvent(w, event.id));
             } catch (error) {
-              notify(
-                error instanceof Error
-                  ? error.message
-                  : "This event could not be deleted.",
-              );
-              return;
+              return commandFailure(error, "This event could not be deleted.");
             }
             notify("Event deleted.");
+            return COMMAND_OK;
           }}
         />
       )}
-      <div
-        className={`toast ${toast ? "visible" : ""}`}
-        role="status"
-        aria-live="polite"
-      >
-        {toast && (
-          <>
-            <Check size={17} />
-            {toast}
-          </>
-        )}
-      </div>
+      <ToastNotification toast={toast} />
     </>
   );
 }

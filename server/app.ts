@@ -120,7 +120,10 @@ export function createApp({
     },
   });
   app.get("/{*path}", assetLimiter, staticFiles, (req, res, next) => {
-    if (req.path.includes(".")) return res.sendStatus(404);
+    if (req.path.includes(".")) {
+      res.sendStatus(404);
+      return;
+    }
     res.sendFile(resolve(staticDir, "index.html"), (error) => {
       if (error) next(error);
     });

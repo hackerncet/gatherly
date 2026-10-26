@@ -1,6 +1,6 @@
 {
   "name": "gatherly-event-planner",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -11,14 +11,15 @@
     "build": "npm run typecheck && vite build",
     "start": "node server/index.ts",
     "test": "npm run test:unit && npm run test:components",
-    "check": "npm run format:check && npm run lint && npm run build && npm run assets:check && npm test",
+    "check": "npm run format:check && npm run architecture:check && npm run lint && npm run build && npm run assets:check && npm test",
     "format:check": "prettier --check src server scripts tests index.html package.json tsconfig.json vite.config.ts vitest.config.ts eslint.config.js",
     "assets:check": "node scripts/check-assets.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src server",
     "test:unit": "node scripts/run-unit.mjs",
     "test:components": "node scripts/run-components.mjs",
-    "test:coverage": "node scripts/run-components.mjs"
+    "test:coverage": "node scripts/run-components.mjs",
+    "architecture:check": "node scripts/check-architecture.mjs"
   },
   "dependencies": {
     "express": "^5.1.0",
