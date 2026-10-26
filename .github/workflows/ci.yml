@@ -61,3 +61,13 @@ jobs:
       - uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4
         with:
           category: /language:javascript-typescript
+      - name: Fail on unresolved CodeQL security or quality findings
+        run: node scripts/check-codeql.mjs
+      - name: Save independent analysis report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: codeql-sarif
+          path: results/*.sarif
+          retention-days: 14
+          if-no-files-found: error

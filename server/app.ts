@@ -35,12 +35,14 @@ export function createApp({
               directives: {
                 defaultSrc: ["'self'"],
                 scriptSrc: ["'self'"],
-                styleSrc: ["'self'", "'unsafe-inline'"],
+                styleSrc: ["'self'"],
+                styleSrcAttr: ["'none'"],
+                frameSrc: ["'none'"],
                 imgSrc: ["'self'", "data:"],
                 fontSrc: ["'self'"],
                 connectSrc: ["'self'"],
                 objectSrc: ["'none'"],
-                baseUri: ["'self'"],
+                baseUri: ["'none'"],
                 frameAncestors: ["'none'"],
                 formAction: ["'self'"],
               },
@@ -48,6 +50,13 @@ export function createApp({
       referrerPolicy: { policy: "no-referrer" },
     }),
   );
+  app.use((_req, res, next) => {
+    res.set(
+      "Permissions-Policy",
+      "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+    );
+    next();
+  });
   app.use("/api", (_req, res, next) => {
     res.set("Cache-Control", "no-store");
     next();

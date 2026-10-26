@@ -271,6 +271,21 @@ test("dummy keys use template mode without an upstream request", () =>
       assert.equal(data.model, null);
     },
   ));
+
+test("production CSP denies inline styles, embedded frames and base overrides; device APIs are disabled", () =>
+  run({ env: { ...env, NODE_ENV: "production" } }, async (base) => {
+    const response = await fetch(`${base}/api/health`);
+    const policy = response.headers.get("content-security-policy");
+    assert.match(policy, /style-src 'self'/);
+    assert.match(policy, /style-src-attr 'none'/);
+    assert.match(policy, /frame-src 'none'/);
+    assert.match(policy, /base-uri 'none'/);
+    assert.doesNotMatch(policy, /unsafe-inline|unsafe-eval/);
+    assert.equal(
+      response.headers.get("permissions-policy"),
+      "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+    );
+  }));
 test("real API key without access code stays disabled", () =>
   run({ env: { OPENROUTER_API_KEY: "real-key" } }, async (base) => {
     assert.equal((await (await post(base)).json()).source, "template");

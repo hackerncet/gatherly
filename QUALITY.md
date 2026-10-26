@@ -19,9 +19,9 @@ Node HTTP/domain/persistence tests and complete UI/component tests.
 
 | Check                            | Observed result                                                           |
 | -------------------------------- | ------------------------------------------------------------------------- |
-| Core tests                       | 114 passing Node tests                                                    |
+| Core tests                       | 115 passing Node tests                                                    |
 | UI tests                         | 45 passing interaction, hook, recovery and axe tests                      |
-| Core coverage                    | 97.88% lines, 93.68% branches, 93.94% functions                           |
+| Core coverage                    | 97.89% lines, 93.99% branches, 93.98% functions                           |
 | Complete UI coverage             | 88.80% lines, 87.41% statements, 81.87% branches, 85.19% functions        |
 | Indexed-access / type-aware lint | Passed; maximum function complexity 20 enforced                           |
 | Dependency audit                 | Zero known vulnerabilities across production and development dependencies |
