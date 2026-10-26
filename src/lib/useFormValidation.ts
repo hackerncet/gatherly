@@ -34,9 +34,13 @@ export function useFormValidation() {
         ? control.labels?.[0]?.textContent?.trim()
         : name;
     setField(name);
-    setError(
-      `Please check ${label || "your details"}: ${issue?.message ?? "A valid value is required."}`,
-    );
+    const detail =
+      issue?.code === "too_small" &&
+      issue.origin === "string" &&
+      issue.minimum === 1
+        ? "This field cannot be blank."
+        : (issue?.message ?? "A valid value is required.");
+    setError(`Please check ${label || "your details"}: ${detail}`);
     if (control instanceof HTMLElement) control.focus();
     return null;
   }
