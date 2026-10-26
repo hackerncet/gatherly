@@ -50,7 +50,7 @@ export function allocatePlanBudget(
   const ranked = [...rows].sort(
     (a, b) => b.remainder - a.remainder || a.index - b.index,
   );
-  for (let i = 0; i < left; i++) rows[ranked[i].index].amount++;
+  for (const row of ranked.slice(0, left)) row.amount++;
   return [
     ...rows.map(({ category, amount }) => ({ category, amount })),
     { category: "Contingency", amount: reserve },

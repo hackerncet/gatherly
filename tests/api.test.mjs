@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { once } from "node:events";
+import { request as httpRequest } from "node:http";
 import { createApp } from "../server/app.ts";
 import { starterPlan } from "../src/lib/domain.ts";
 const brief = {
@@ -48,7 +49,7 @@ async function run(options, fn) {
   await once(server, "listening");
   const base = `http://127.0.0.1:${server.address().port}`;
   try {
-    await fn(base);
+    await fn(base, server);
   } finally {
     await new Promise((r) => server.close(r));
   }
@@ -80,6 +81,53 @@ const mockFetch =
       ),
       { status: 200, headers: { "Content-Type": "application/json" } },
     );
+
+test("a client disconnected while waiting for the catalog cannot start billable generation", async () => {
+  let releaseCatalog, catalogStarted;
+  const started = new Promise((resolve) => {
+    catalogStarted = resolve;
+  });
+  const waiting = new Promise((resolve) => {
+    releaseCatalog = resolve;
+  });
+  let generations = 0;
+  await run(
+    {
+      env,
+      fetchImpl: async (url) => {
+        if (url.endsWith("/models")) {
+          catalogStarted();
+          await waiting;
+        } else generations++;
+        return mockFetch()(url);
+      },
+    },
+    async (base, server) => {
+      const disconnected = new Promise((resolve) => {
+        server.once("request", (_request, response) =>
+          response.once("close", resolve),
+        );
+      });
+      const request = httpRequest(`${base}/api/plan`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-ai-access-code": env.AI_ACCESS_CODE,
+        },
+      });
+      request.on("error", () => {});
+      request.end(JSON.stringify(input));
+      await started;
+      const closed = once(request, "close").catch(() => {});
+      request.destroy();
+      await closed;
+      await disconnected;
+      releaseCatalog();
+      await fetch(`${base}/api/models`);
+      assert.equal(generations, 0);
+    },
+  );
+});
 
 test("native structured-output routes receive the same bounded provider contract enforced on return", () => {
   let captured;

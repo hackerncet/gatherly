@@ -1,5 +1,6 @@
 import { eventFromPlan, shiftDate, today, workspaceSchema } from "./domain.ts";
-import type { Brief, Event, Workspace } from "./types";
+import { activeEvent } from "./workspace.ts";
+import type { Brief, Workspace } from "./types";
 export const STORAGE_KEY = "gatherly.workspace.v1";
 function demoWorkspace(): Workspace {
   const base: Brief = {
@@ -13,13 +14,16 @@ function demoWorkspace(): Workspace {
     preferences:
       "An intimate garden wedding, seasonal flowers, vegetarian food and meaningful little details.",
   };
-  const wedding = eventFromPlan(base) as Event;
-  wedding.tasks[0].done = true;
-  wedding.tasks[1].done = true;
-  wedding.tasks[2].done = true;
-  wedding.budgets[0].paid = 75000;
-  wedding.budgets[1].paid = 20000;
-  wedding.budgets[2].paid = 15000;
+  const wedding = eventFromPlan(base);
+  wedding.tasks = wedding.tasks.map((task, index) => ({
+    ...task,
+    done: index < 3,
+  }));
+  const payments = [75000, 20000, 15000];
+  wedding.budgets = wedding.budgets.map((line, index) => ({
+    ...line,
+    paid: payments[index] ?? 0,
+  }));
   wedding.vendors = [
     {
       id: "sample-venue",
@@ -68,7 +72,7 @@ function demoWorkspace(): Workspace {
     budget: 30000,
     date: shiftDate(today(), 28),
     preferences: "A cozy, creative celebration with friends.",
-  }) as Event;
+  });
   const community = eventFromPlan({
     ...base,
     title: "The neighborhood gathering",
@@ -78,7 +82,7 @@ function demoWorkspace(): Workspace {
     date: shiftDate(today(), 45),
     preferences:
       "An inclusive afternoon with local food, music and activities for all ages.",
-  }) as Event;
+  });
   return {
     version: 1,
     events: [wedding, birthday, community],
@@ -95,9 +99,9 @@ export function loadWorkspace(): {
   try {
     raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { workspace: demoWorkspace(), warning: "" };
-    const value = workspaceSchema.parse(JSON.parse(raw)) as Workspace;
+    const value = workspaceSchema.parse(JSON.parse(raw));
     if (!value.events.some((e) => e.id === value.activeId))
-      value.activeId = value.events[0].id;
+      value.activeId = activeEvent(value).id;
     return { workspace: value, warning: "", raw };
   } catch {
     return {
@@ -111,9 +115,9 @@ export function loadWorkspace(): {
 export function parseBackup(raw: string): Workspace {
   if (raw.length > 25_000_000)
     throw new Error("Backup must be smaller than 25 MB.");
-  const value = workspaceSchema.parse(JSON.parse(raw)) as Workspace;
+  const value = workspaceSchema.parse(JSON.parse(raw));
   if (!value.events.some((e) => e.id === value.activeId))
-    value.activeId = value.events[0].id;
+    value.activeId = activeEvent(value).id;
   return value;
 }
 export function downloadFile(

@@ -5,8 +5,8 @@ import type {
   vendorSchema,
   guestSchema,
   ideaSchema,
-} from "./domain.ts";
-export type { Brief, Event, Plan, Workspace } from "./domain.ts";
+} from "./schemas.ts";
+export type { Brief, Event, Plan, Workspace } from "./schemas.ts";
 export type EventType = "wedding" | "birthday" | "community";
 export type Currency = "INR" | "USD" | "EUR" | "GBP";
 export type Budget = z.infer<typeof budgetSchema>;

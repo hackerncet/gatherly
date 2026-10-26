@@ -13,6 +13,7 @@ export function useServiceStatus() {
     const controller = new AbortController();
     void apiJson("/api/health", healthSchema, { signal: controller.signal })
       .then((health) => {
+        if (controller.signal.aborted) return;
         setEnabled(health.aiEnabled);
         if (health.aiEnabled)
           setMessage(

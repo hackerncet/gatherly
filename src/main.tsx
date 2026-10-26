@@ -6,11 +6,11 @@ class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
   { failed: boolean }
 > {
-  state = { failed: false };
+  override state = { failed: false };
   static getDerivedStateFromError() {
     return { failed: true };
   }
-  render() {
+  override render() {
     return this.state.failed ? (
       <main className="fatal">
         <h1>Let’s get you back to planning.</h1>

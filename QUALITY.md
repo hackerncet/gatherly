@@ -1,78 +1,83 @@
-# Quality and acceptance evidence
+# Quality and acceptance evidence — Gatherly 1.2
 
-**Latest improvement cycle:** [IMPROVEMENT_AUDIT.md](IMPROVEMENT_AUDIT.md). The historical results below describe the earlier deployed revision. The latest implementation replaces localStorage writes, adds full production TypeScript checking, 126 tests and component/axe/coverage gates.
+Reviewed on 26 October 2026 (IST). This is measured engineering evidence, not a
+self-awarded competition score or a certification. The owner's latest supplied
+external result is 96.72 overall: quality 88, security 99, efficiency 100,
+testing 99, accessibility 99 and alignment 100. No deduction annotations were
+supplied. [The final review](docs/FINAL_REVIEW.md) records the reproduced gaps,
+changes and remaining verification. Earlier findings remain in the dated
+[improvement audit](IMPROVEMENT_AUDIT.md) and [live baseline](LIVE_AI_AUDIT_2026-10-25.md).
 
-Checked on 25 October 2026. This report records tested behavior, not a claim of perfection or certification.
+## Reproduce the checks
 
-For the latest readiness check and newly reproduced findings, see [LIVE_AI_AUDIT_2026-10-25.md](LIVE_AI_AUDIT_2026-10-25.md). Live AI remains disabled in that check, and a cross-tab lost-update issue is documented there.
+Requires Node 24. Run `npm ci`, `NODE_ENV=production npm run check`, then
+`npm audit --audit-level=moderate`. `check` includes formatting, type-aware ESLint,
+strict TypeScript (including UI tests), the production build, asset budgets,
+Node HTTP/domain/persistence tests and complete UI/component tests.
 
-| Requested parameter | Implemented acceptance criteria                                                                                                                                             | Evidence                                                                       |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Code quality        | Strict TypeScript, separated domain/API/UI layers, versioned data schemas, consistent formatting, documented boundaries                                                     | `npm run build`; Prettier; focused source modules                              |
-| Efficiency          | One small Node service, static assets with cache headers, no database dependency, no third-party UI assets, deduplicated/cached model catalog, bounded concurrency/timeouts | Production build; model-cache and timeout tests                                |
-| Accessibility       | Semantic navigation and tables, labeled inputs, visible focus, native dialog trapping/Escape, non-color status text, skip link, reduced motion, responsive CSS              | Browser inspection and interaction checks; contrast review                     |
-| Security            | Server-only key, separate access code, minimal AI payload, structured validation, origin checks, bounded requests, strict CSP, protected import/export                      | API and domain regression tests; production dependency audit                   |
-| Testing             | HTTP integration and domain tests covering positive, negative and provider failure paths; real-browser workflow review                                                      | `npm test`; browser checklist below                                            |
-| Problem alignment   | Weddings, birthdays, community events; budgets, timelines, vendors, personalized ideas                                                                                      | Three valid starter templates; end-to-end birthday creation; AI Studio preview |
+## Verified local results
 
-## Automated results
+| Check                            | Observed result                                                           |
+| -------------------------------- | ------------------------------------------------------------------------- |
+| Core tests                       | 114 passing Node tests                                                    |
+| UI tests                         | 45 passing interaction, hook, recovery and axe tests                      |
+| Core coverage                    | 97.88% lines, 93.68% branches, 93.94% functions                           |
+| Complete UI coverage             | 88.80% lines, 87.41% statements, 81.87% branches, 85.19% functions        |
+| Indexed-access / type-aware lint | Passed; maximum function complexity 20 enforced                           |
+| Dependency audit                 | Zero known vulnerabilities across production and development dependencies |
+| Initial JavaScript               | 372,629 bytes / 115,930 gzip in the recorded build                        |
+| Stylesheet                       | 59,673 bytes / 12,777 gzip in the recorded build                          |
 
-- 54 domain, persistence and HTTP integration tests passed on the final test run.
-- Strict TypeScript check and production build passed.
-- `npm audit --omit=dev --audit-level=moderate`: zero known vulnerabilities reported for production dependencies at that check.
-- Each event type receives a complete valid starter plan; allocations sum exactly to the budget, including at tiny/uneven values.
-- Invalid dates, non-integer or negative budgets, invalid guest counts and oversized inputs are rejected.
-- Tests verify access-code enforcement, cross-origin denial, response headers, model catalog caching/filtering/fallback, provider redaction, invalid/over-budget AI output rejection, timeout handling, hourly throttling and no accidental exposure of server sources.
-- Provider tests use mocked upstream responses. No real API key was supplied and no live AI completion was charged.
+Core scope is server handlers/provider/allocation and loaded shared/domain/storage
+modules; startup/dev entrypoints and browser hooks/client are excluded there.
+The separate UI scope includes **all** components, nine pages, App, workspace,
+service/model/planner/validation hooks, navigation and the typed API client. Only
+the DOM mounting entrypoint `src/main.tsx` is excluded from that UI scope. Coverage
+percentages describe different scopes and must not be averaged into a score.
 
-## Browser workflow checklist
+Core gates: 95% lines, 90% branches and functions. UI gates: 85% lines/statements,
+80% branches/functions. The previous 93% scoped UI line number covered only a
+small subset and is not comparable with this complete UI measurement.
 
-This section is updated as the observed checks complete.
+## Behavior exercised
 
-- [x] Dashboard loads and exposes the three sample event types.
-- [x] New birthday event created with custom budget, guest count and preferences.
-- [x] Generated starter allocation and task count match the selected birthday.
-- [x] Initial preview UUID failure on non-HTTPS development origins fixed with a secure-random fallback.
-- [x] Dashboard text contrast audited and low-contrast captions darkened.
-- [x] Task add/complete and persistence after reload.
-- [x] Budget edit and totals update.
-- [x] Vendor add and checklist toggle.
-- [x] Guest add and RSVP update.
-- [x] Idea save and custom idea add.
-- [x] AI starter preview and create-new-event flow.
-- [x] Backup export downloaded and parsed successfully: completed task, recorded payment, vendor check, confirmed RSVP and saved ideas were all preserved.
-- [x] Backup recovery, invalid import, version and duplicate-ID rejection (automated storage tests).
-- [x] Visible text contrast check passed on all eight desktop views.
-- [x] Live Render deployment: service reached `live`; homepage and `/api/health` returned HTTP 200. `/api/models` returned a live catalog with 467 text-capable models at the check.
-- [x] Eight views checked in responsive browser frames at nominal widths 320, 390 and 768 px (24 layout checks): no document-level horizontal overflow. Tables retain their own keyboard-focusable scroll regions.
-- [x] Maximum allowed budget (1,000,000,000 currency units) checked at the narrow viewport: full amount remained available without page overflow.
-- [x] Modal keyboard wrapping checked across 12 consecutive Tab stops; Escape closes the dialog and focus returns to the invoking control. Internal dialog-padding clicks keep it open.
-- [ ] Physical mobile-device, touch and screen-reader testing — responsive frames are layout checks, not a substitute for these checks.
+- All three event types, preferences, exact AI allocations and bounded schemas.
+- Create/edit event, navigation/search, budget, payment, task, vendor checks,
+  guest/RSVP, idea, agenda and starter preview/create workflows.
+- Atomic stale-write rejection, twenty-writer race, migration, blocked/closed
+  database reopening, queued changes, explicit reload/replacement and storage failure.
+- Corrupt, oversized and competing file imports; failed commit retains the
+  candidate for retry; success is announced only after the database commits.
+- AI consent/access controls, exact route selection, aborts, stale completion
+  suppression, immutable preview context, upstream failures and StrictMode prompt handling.
+- Schema errors focus and describe the affected field. Nine views and full shell
+  pass structural axe checks; native dialog focus/trapping and boundary recovery are tested.
+- Calendar CR/LF/Unicode escaping, unique scoped identifiers, valid date boundaries,
+  safe Markdown/CSV exports and preservation of sensitive guest notes outside AI payloads.
 
-## Limits and honest scope
+## CI and deployment verification
 
-There is no 100% security, accessibility or defect-free guarantee. This is a single-device/browser application; it has no login, cloud database, real-time collaboration, automated messaging, actual vendor booking or payment processing. Saved demo records are labeled placeholders. Clearing browser data removes plans; backups are the portability mechanism.
+CI retains LCOV core and HTML/JSON UI coverage artifacts for 14 days. It also runs
+GitHub CodeQL's JavaScript/TypeScript security-and-quality suite with pinned
+GitHub Action revisions and minimal permissions. A configured scan is not itself
+a passing result; the final review records the actual run outcome.
 
-Accessibility review is not a full assistive-technology certification. Responsive styles are implemented; browser/device coverage must be reported only where actually exercised. Automated dependencies are audited against the available registry advisory database at the time of the check, not against undisclosed vulnerabilities. Load, penetration and real provider compatibility testing remain deployment-specific work.
+Render builds run the same production-environment `check` command. The service
+uses its existing automatic deployment from `main`; no secrets, pricing tier,
+provider spending limits or stored workspace format were changed.
 
-## Publishing state
+Real OpenRouter wedding/birthday/community acceptance from the previous deployed
+release remains documented in [AI acceptance](docs/AI_ACCEPTANCE_2026-10-26.json).
+That earlier evidence is not misrepresented as a new execution of this revision.
+The final review distinguishes new deployed checks from historical checks.
 
-- Source: https://github.com/hackerncet/gatherly (branch `main`).
-- Live app: https://gatherly-qx5g.onrender.com.
-- GitHub Actions run `40192450378` passed the initial complete 54-test implementation. Further pushes run the same checks plus the new asset-size gate and full dependency audit.
-- Render runs the app on its free Node web-service plan in Singapore and automatically deploys changes from `main`. The service uses Render’s default TCP readiness probe; `/api/health` was additionally verified over HTTPS.
-- HTTPS responses include the app’s same-origin CSP, HSTS and no-store API policy. Attempts to fetch `/.env` and `/server/app.mjs` returned 404.
-- The initial deployment used the requested dummy key and access code. The owner has since reported updating the key; the latest audit still observed `aiEnabled: false`. Secret values were not inspected. See the live AI audit for the activation conditions and remaining blocker.
+## Limits
 
-## Improvements in this review
-
-- Added task editing and an explicit option to shift unfinished deadlines when the event date changes. Completed task dates and payment records are preserved.
-- Added lazy loading for secondary views. The initial JavaScript bundle decreased from 397.49 kB / 119.67 kB gzip to 357.27 kB / 110.57 kB gzip in the local production build. CSS was 57.94 kB / 12.35 kB gzip. These are build measurements, not Core Web Vitals.
-- Added corruption-recovery downloads, duplicate workspace-ID validation, a larger bounded backup import, explicit selector labels, Escape dismissal for search and better modal input focus.
-- Fixed accidental dismissal when clicking a dialog’s internal padding.
-- Added concurrent catalog deduplication, three-request concurrency cap and daily AI attempt cap tests.
-- Audited all dependencies including development dependencies: zero known vulnerabilities reported by `npm audit --audit-level=moderate` at this check.
-
-- Added an explicit first/last keyboard loop and focus restoration for modal dialogs.
-- Fixed hidden table labels escaping their scroll container at narrow widths; added named, focusable table regions and safe wrapping for large currency values.
-- Removed an unnecessary stylesheet import. CI enforces reviewed size budgets of 400 kB / 125 kB gzip for the initial JavaScript entry and 75 kB / 16 kB gzip for CSS.
+Automated accessibility does not certify screen-reader/device or full WCAG
+compliance; JSDOM axe color contrast is disabled. Earlier responsive/contrast
+browser checks are historical until explicitly repeated. CodeQL and advisory
+scans do not prove absence of every vulnerability. There is no independent
+penetration test or large-scale load certification. Plans remain browser-local
+without account/cloud sync or encryption. No vendor booking, invitations or
+payments occur automatically. A fresh PromptWars evaluation is needed to know
+the new external score.

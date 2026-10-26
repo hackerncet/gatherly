@@ -24,8 +24,10 @@ export function createWorkspaceRepository(
   name = "gatherly.local.v2",
 ) {
   let connection: Promise<IDBDatabase> | undefined;
-  const open = () =>
-    (connection ??= new Promise<IDBDatabase>((resolve, reject) => {
+  const open = (): Promise<IDBDatabase> => {
+    if (connection) return connection;
+    let abandoned = false;
+    const opening = new Promise<IDBDatabase>((resolve, reject) => {
       if (!factory) {
         reject(
           new Error(
@@ -37,27 +39,46 @@ export function createWorkspaceRepository(
       const request = factory.open(name, 1);
       request.onupgradeneeded = () =>
         request.result.createObjectStore("workspace");
-      request.onerror = () => {
-        connection = undefined;
-        reject(request.error);
-      };
-      request.onblocked = () =>
+      request.onerror = () =>
+        reject(
+          request.error ?? new Error("Device storage could not be opened."),
+        );
+      request.onblocked = () => {
+        abandoned = true;
         reject(new Error("Close older Gatherly tabs to open saved data."));
-      request.onsuccess = () => {
-        request.result.onversionchange = () => request.result.close();
-        resolve(request.result);
       };
-    }));
+      request.onsuccess = () => {
+        const database = request.result;
+        if (abandoned) {
+          database.close();
+          return;
+        }
+        database.onversionchange = () => {
+          database.close();
+          if (connection === opening) connection = undefined;
+        };
+        resolve(database);
+      };
+    });
+    connection = opening;
+    void opening.catch(() => {
+      if (connection === opening) connection = undefined;
+    });
+    return opening;
+  };
   async function transact(
     initial: Workspace | undefined,
     next?: { workspace: Workspace; expected: number },
   ): Promise<WorkspaceRecord> {
     const db = await open();
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction("workspace", "readwrite");
+      const transaction = db.transaction(
+        "workspace",
+        initial || next ? "readwrite" : "readonly",
+      );
       const store = transaction.objectStore("workspace");
       const request = store.get("current");
-      let record: WorkspaceRecord;
+      let record: WorkspaceRecord | undefined;
       let failure: unknown;
       request.onsuccess = () => {
         try {
@@ -84,10 +105,13 @@ export function createWorkspaceRepository(
           transaction.abort();
         }
       };
-      transaction.oncomplete = () => resolve(record);
+      transaction.oncomplete = () => {
+        if (record) resolve(record);
+        else reject(new Error("No saved workspace was returned."));
+      };
       transaction.onabort = () =>
         reject(
-          failure ||
+          (failure instanceof Error ? failure : undefined) ||
             transaction.error ||
             new Error("Workspace save was interrupted."),
         );
@@ -101,8 +125,9 @@ export function createWorkspaceRepository(
     save: (workspace: Workspace, expected: number) =>
       transact(undefined, { workspace, expected }),
     close: async () => {
-      if (connection) (await connection).close();
+      const previous = connection;
       connection = undefined;
+      if (previous) (await previous).close();
     },
   };
 }

@@ -51,7 +51,7 @@ export function planningInsights(event: Event, now: string) {
 function icsText(value: string) {
   return value
     .replaceAll("\\", "\\\\")
-    .replace(/\r?\n/g, "\\n")
+    .replace(/\r\n|\r|\n/g, "\\n")
     .replaceAll(";", "\\;")
     .replaceAll(",", "\\,");
 }
@@ -78,12 +78,18 @@ export function calendarFile(event: Event, createdAt = new Date()) {
     .replace(/\.\d{3}Z$/, "Z");
   const entries = [
     {
-      id: event.id,
+      id: JSON.stringify([event.id, "event"]),
       title: event.title,
       date: event.date,
       location: event.location,
     },
-    ...event.tasks.filter((t) => !t.done).map((t) => ({ ...t, location: "" })),
+    ...event.tasks
+      .filter((t) => !t.done)
+      .map((t) => ({
+        ...t,
+        id: JSON.stringify([event.id, "task", t.id]),
+        location: "",
+      })),
   ];
   const lines = [
     "BEGIN:VCALENDAR",
@@ -97,7 +103,10 @@ export function calendarFile(event: Event, createdAt = new Date()) {
       `UID:${icsText(entry.id)}@gatherly.local`,
       `DTSTAMP:${stamp}`,
       `DTSTART;VALUE=DATE:${entry.date.replaceAll("-", "")}`,
-      `DTEND;VALUE=DATE:${shiftDate(entry.date, 1).replaceAll("-", "")}`,
+      // A date-only event without DTEND lasts one day (RFC 5545 §3.6.1).
+      ...(entry.date === "9999-12-31"
+        ? []
+        : [`DTEND;VALUE=DATE:${shiftDate(entry.date, 1).replaceAll("-", "")}`]),
       `SUMMARY:${icsText(entry.title)}`,
       `LOCATION:${icsText(entry.location)}`,
       "END:VEVENT",
@@ -106,26 +115,40 @@ export function calendarFile(event: Event, createdAt = new Date()) {
   return lines.map(fold).join("\r\n") + "\r\n";
 }
 
+/** Export plain user text, without creating HTML, links or Markdown instructions. */
+function markdownText(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replace(/([\\`*_{}[\]()!#+|])/g, "\\$1")
+    .replace(/\r\n|\r|\n/g, " ");
+}
 export function eventBrief(event: Event) {
   const value = totals(event);
   return [
-    `# ${event.title}`,
-    `${event.type} · ${event.date} · ${event.location}`,
+    `# ${markdownText(event.title)}`,
+    `${event.type} · ${event.date} · ${markdownText(event.location)}`,
     `Expected guests: ${event.guests}. Confirmed: ${value.confirmed}.`,
     `Budget: ${event.currency} ${event.budget}. Planned: ${value.allocated}. Paid: ${value.paid}.`,
     "\n## Event-day schedule",
-    ...event.agenda.map(
-      (a) => `${a.time} — ${a.title}${a.owner ? ` (${a.owner})` : ""}`,
-    ),
+    ...[...event.agenda]
+      .sort((a, b) => a.time.localeCompare(b.time))
+      .map(
+        (a) =>
+          `${a.time} — ${markdownText(a.title)}${a.owner ? ` (${markdownText(a.owner)})` : ""}`,
+      ),
     "\n## Outstanding tasks",
-    ...event.tasks.filter((t) => !t.done).map((t) => `- ${t.date}: ${t.title}`),
+    ...event.tasks
+      .filter((t) => !t.done)
+      .map((t) => `- ${t.date}: ${markdownText(t.title)}`),
     "\n## Vendor checks",
     ...event.vendors.map(
       (v) =>
-        `- ${v.category}: ${v.name} (${v.status}); ${v.checklist.filter(Boolean).length}/4 checks recorded`,
+        `- ${markdownText(v.category)}: ${markdownText(v.name)} (${v.status}); ${v.checklist.filter(Boolean).length}/4 checks recorded`,
     ),
     "\n## Preferences",
-    event.preferences,
+    markdownText(event.preferences),
     "\nEstimates and manually recorded statuses require organizer verification. No reservations or messages are sent.",
   ].join("\n");
 }

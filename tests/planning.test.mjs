@@ -120,3 +120,51 @@ test("shareable brief includes schedule and outstanding preparation without gues
   assert.match(text, /10:00 — Doors open \(Welcome team\)/);
   assert.doesNotMatch(text, /Private medical|Private guest/);
 });
+
+test("calendar escapes standalone carriage returns and scopes duplicate raw IDs by record type", () => {
+  const event = eventFromPlan({
+    ...brief,
+    title: "Meeting\rBEGIN:VEVENT\r\nInjected\nline",
+  });
+  event.tasks = [
+    {
+      id: event.id,
+      title: "Separate task",
+      date: event.date,
+      category: "Planning",
+      done: false,
+    },
+  ];
+  const result = calendarFile(event);
+  assert.equal(
+    result.split("\r\n").filter((line) => line === "BEGIN:VEVENT").length,
+    2,
+  );
+  assert.match(result, /Meeting\\nBEGIN:VEVENT\\nInjected\\nline/);
+  const ids = result.split("\r\n").filter((line) => line.startsWith("UID:"));
+  assert.equal(new Set(ids).size, 2);
+});
+
+test("brief export escapes HTML and link instructions and orders the agenda chronologically", () => {
+  const event = eventFromPlan({
+    ...brief,
+    title: "<script>alert(1)</script>",
+    preferences: "[Click](javascript:alert(1))\n# forged heading",
+  });
+  event.agenda = [
+    { id: "late", time: "16:00", title: "Later", owner: "" },
+    { id: "early", time: "10:00", title: "Earlier", owner: "" },
+  ];
+  const text = eventBrief(event);
+  assert.doesNotMatch(text, /<script>|\[Click\]\(|\n# forged/);
+  assert.match(text, /&lt;script&gt;/);
+  assert.ok(text.indexOf("10:00") < text.indexOf("16:00"));
+});
+
+test("the final representable calendar date exports as a valid single all-day event", () => {
+  const event = eventFromPlan({ ...brief, date: "9999-12-31" });
+  event.tasks = [];
+  const calendar = calendarFile(event);
+  assert.match(calendar, /DTSTART;VALUE=DATE:99991231/);
+  assert.doesNotMatch(calendar, /DTEND|10000/);
+});

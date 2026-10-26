@@ -14,11 +14,13 @@ Workspace transactions compare revisions atomically across tabs. Stale writers a
 - **Abuse controls:** 20 KB JSON body limit; bounded strings, lists and whole-number amounts; 8 planning attempts per IP per hour; 30 catalog requests per IP per minute; 3 simultaneous provider generations and 100 provider attempts per UTC day per server process. Provider requests time out after 45 seconds and are cancelled when the client disconnects.
 - **Cost limits:** The request token cap is 2,200. App limits are not a monetary guarantee: configure a provider-side spending limit and a restricted OpenRouter key. Per-process counters reset on restart and are not coordinated across replicas. Use a shared rate-limit store and authenticated users before opening commercial public AI access at scale.
 - **HTTP:** Helmet sets security headers, a restrictive same-origin CSP and frame denial. Production has no third-party fonts, scripts or image hosts. Cross-origin browser POST requests are rejected. API responses use no-store. The server only serves files from `dist`, not the repository or server source.
-- **Exports/imports:** Backups are versioned and structurally validated before replacement. Maximum import size is 25 MB. CSV cell values are quoted and formula prefixes, including whitespace-prefixed formulas, neutralized. Imports require an explicit replace action. Destructive UI actions use confirmation dialogs.
+- **Exports/imports:** Backups are versioned and structurally validated before replacement. Maximum import size is 25 MB. CSV cell values are quoted and formula prefixes, including whitespace-prefixed formulas, neutralized. Calendar exports normalize CR, LF and CRLF and scope record identifiers. Shareable Markdown escapes untrusted HTML and link syntax. Stale import reads and failed file selections cannot leave an earlier candidate active. Imports require an explicit replace action. Destructive UI actions use confirmation dialogs.
 - **Deployment:** HTTPS is supplied by the hosting platform. Production trusts one reverse-proxy hop for client IPs, matching the intended single Render edge deployment; review this assumption for other hosting topologies. Do not expose this server behind an untrusted forwarding chain.
 - **Logs:** The app logs readiness only and does not log requests, prompts, secrets or model outputs. Hosting providers may retain their own access logs.
 
 ## Operational checks
+
+CI also runs CodeQL security-and-quality analysis and retains coverage artifacts. GitHub Actions are pinned to reviewed commit revisions; checkout credentials are not persisted.
 
 Run `npm run check` and `npm audit --audit-level=moderate` before releases. Keep dependencies and the Node runtime patched. Never add real secrets to Git; if one is accidentally committed, revoke it immediately and remove it from history as appropriate.
 

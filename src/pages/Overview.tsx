@@ -307,7 +307,9 @@ export function Overview({
                     navigate("studio");
                   }}
                 >
-                  <span className="suggestion-number">0{i + 1}</span>
+                  <span className="suggestion-number" aria-hidden="true">
+                    0{i + 1}
+                  </span>
                   {s}
                   <ArrowUpRight size={15} />
                 </button>
@@ -364,5 +366,9 @@ export function Overview({
   );
 }
 function PlusIcon() {
-  return <span className="plus-symbol">+</span>;
+  return (
+    <span className="plus-symbol" aria-hidden="true">
+      +
+    </span>
+  );
 }

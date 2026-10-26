@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useState } from "react";
 import {
   ArrowRight,
   Check,
@@ -11,21 +11,13 @@ import {
   Sparkles,
   WandSparkles,
 } from "lucide-react";
-import { Botanical, Modal, PageHeading } from "../components/ui";
-import { aiPlanSchema, eventFromPlan, starterPlan } from "../lib/domain.ts";
-import { apiJson, catalogSchema, planResponseSchema } from "../lib/api.ts";
+import { Botanical, PageHeading } from "../components/ui";
 import { money } from "../lib/storage";
-import { hasKnownPricing } from "../lib/models";
-import type { Brief, Event, Model, Plan } from "../lib/types";
-function initialPrompt() {
-  try {
-    const p = sessionStorage.getItem("gatherly.prompt") || "";
-    sessionStorage.removeItem("gatherly.prompt");
-    return p;
-  } catch {
-    return "";
-  }
-}
+import { useModelCatalog } from "../lib/useModelCatalog";
+import { usePlanner } from "../lib/usePlanner";
+import { ModelPicker } from "../components/ModelPicker";
+import { PlanPreview } from "../components/PlanPreview";
+import type { Event } from "../lib/types";
 export function Studio({
   event,
   aiEnabled,
@@ -41,143 +33,27 @@ export function Studio({
   onCreate: (e: Event) => void;
   notify: (s: string) => void;
 }) {
-  const [models, setModels] = useState<Model[]>([
-    {
-      id: "openrouter/free",
-      name: "OpenRouter · Free model router",
-      free: true,
-      contextLength: 0,
-      inputPrice: "0",
-      outputPrice: "0",
-    },
-  ]);
-  const [model, setModel] = useState("openrouter/free");
-  const [catalogSource, setCatalogSource] = useState("loading");
-  const [catalogRefresh, setCatalogRefresh] = useState(0);
-  const [prompt, setPrompt] = useState(initialPrompt);
-  const [code, setCode] = useState("");
-  const [consent, setConsent] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [preview, setPreview] = useState<{
-    plan: Plan;
-    source: "ai" | "template";
-    model: string | null;
-  } | null>(null);
+  const catalog = useModelCatalog();
+  const { models, model, selected, source: catalogSource } = catalog;
   const [showModels, setShowModels] = useState(false);
-  const [modelSearch, setModelSearch] = useState("");
-  const [freeOnly, setFreeOnly] = useState(false);
-  const abortRef = useRef<AbortController | null>(null);
-  useEffect(() => {
-    const controller = new AbortController();
-    setCatalogSource("loading");
-    apiJson("/api/models", catalogSchema, { signal: controller.signal })
-      .then((d) => {
-        if (Array.isArray(d.models) && d.models.length) {
-          setModels(d.models);
-          setCatalogSource(d.source || "live");
-        } else setCatalogSource("fallback");
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) setCatalogSource("fallback");
-      });
-    return () => {
-      controller.abort();
-      abortRef.current?.abort();
-    };
-  }, [catalogRefresh]);
-  const selected = models.find((m) => m.id === model) || models[0];
-  const filtered = models.filter(
-    (m) =>
-      (!freeOnly || m.free) &&
-      `${m.name} ${m.id}`.toLowerCase().includes(modelSearch.toLowerCase()),
-  );
-  const brief: Brief = {
-    title: event.title,
-    type: event.type,
-    date: event.date,
-    location: event.location,
-    guests: event.guests,
-    budget: event.budget,
-    currency: event.currency,
-    preferences: event.preferences,
-  };
-  function template() {
-    setError("");
-    setPreview({
-      plan: starterPlan({
-        ...brief,
-        preferences: [brief.preferences, prompt]
-          .filter(Boolean)
-          .join(" ")
-          .slice(0, 1600),
-      }) as Plan,
-      source: "template",
-      model: null,
-    });
-    notify("Starter plan ready to review.");
-  }
-  async function generate(e: FormEvent) {
-    e.preventDefault();
-    if (!aiEnabled) {
-      template();
-      return;
-    }
-    if (!consent) {
-      setError(
-        "Please agree to share your event brief with OpenRouter to continue.",
-      );
-      return;
-    }
-    setLoading(true);
-    setError("");
-    const controller = new AbortController();
-    abortRef.current = controller;
-    const timeout = setTimeout(() => controller.abort(), 55000);
-    try {
-      const data = await apiJson("/api/plan", planResponseSchema, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-ai-access-code": code,
-        },
-        body: JSON.stringify({ brief, model, prompt, consent }),
-        signal: controller.signal,
-      });
-      const plan = aiPlanSchema.parse(data.plan) as Plan;
-      setPreview({ plan, source: data.source, model: data.model });
-      notify(
-        data.source === "ai"
-          ? "Your AI plan is ready to review."
-          : "Your starter plan is ready to review.",
-      );
-    } catch (err) {
-      setError(
-        err instanceof Error && err.name === "AbortError"
-          ? "Generation stopped. You can try another model or use a starter plan."
-          : err instanceof Error
-            ? err.message
-            : "Something went wrong. Please try again.",
-      );
-    } finally {
-      clearTimeout(timeout);
-      setLoading(false);
-      abortRef.current = null;
-    }
-  }
+  const planner = usePlanner(event, aiEnabled, notify);
+  const {
+    prompt,
+    setPrompt,
+    code,
+    setCode,
+    consent,
+    setConsent,
+    loading,
+    error,
+    preview,
+    template,
+    generate,
+    cancel,
+  } = planner;
   function usePlan() {
-    if (!preview) return;
-    const copy = eventFromPlan(
-      { ...brief, title: `${brief.title.slice(0, 85)} · new plan` },
-      preview.plan,
-    ) as Event;
-    copy.notes = preview.plan.summary;
-    copy.provenance = {
-      source: preview.source === "ai" ? "ai" : "template",
-      model: preview.model,
-      createdAt: new Date().toISOString(),
-    };
-    onCreate(copy);
+    const next = planner.createEvent();
+    if (next) onCreate(next);
   }
   return (
     <>
@@ -235,7 +111,16 @@ export function Studio({
               <RefreshCw size={16} />
             </button>
           </div>
-          <form onSubmit={generate} aria-busy={loading}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void generate(model);
+            }}
+            data-workspace-draft={
+              Boolean(prompt || code || consent || loading) || undefined
+            }
+            aria-busy={loading}
+          >
             <label>
               What would make it special?
               <textarea
@@ -267,7 +152,7 @@ export function Studio({
             <div className="model-label">
               <label htmlFor="model-picker">Your AI model</label>
               <span>
-                {catalogSource === "live"
+                {["live", "cached"].includes(catalogSource)
                   ? `${models.length} text models`
                   : catalogSource === "loading"
                     ? "Loading catalog…"
@@ -362,7 +247,7 @@ export function Studio({
               <button
                 type="button"
                 className="text-link cancel-generation"
-                onClick={() => abortRef.current?.abort()}
+                onClick={cancel}
               >
                 Cancel generation
               </button>
@@ -385,85 +270,7 @@ export function Studio({
         </section>
         <div className="studio-output">
           {preview ? (
-            <section className="panel plan-preview">
-              <div className="plan-preview-heading">
-                <span className="ai-orb">
-                  <Check size={22} />
-                </span>
-                <div>
-                  <span className="eyebrow">
-                    {preview.source === "ai"
-                      ? "GENERATED WITH AI"
-                      : "CURATED STARTER PLAN"}
-                  </span>
-                  <h2>A little vision. A clear direction.</h2>
-                </div>
-              </div>
-              {preview.model && (
-                <p className="field-note">Model: {preview.model}</p>
-              )}
-              <p className="plan-summary">{preview.plan.summary}</p>
-              <h3>Your budget, thoughtfully divided</h3>
-              {preview.source === "ai" && (
-                <p className="field-note">
-                  Category priorities are allocated to your total, with a 10%
-                  contingency rounded up to a whole currency unit.
-                </p>
-              )}
-              <div className="plan-budget">
-                {preview.plan.budgets.map((b, i) => (
-                  <div key={i}>
-                    <span>{b.category}</span>
-                    <strong>{money(b.amount, event.currency)}</strong>
-                  </div>
-                ))}
-              </div>
-              <h3>A few moments to plan for</h3>
-              <ol className="plan-tasks">
-                {preview.plan.tasks.map((t, i) => (
-                  <li key={i}>
-                    <span>{t.title}</span>
-                    <small>{t.daysBefore} days before</small>
-                  </li>
-                ))}
-              </ol>
-              <h3>Your vendor selection checklist</h3>
-              {preview.plan.vendors.map((v) => (
-                <div className="plan-idea" key={v.category}>
-                  <ShieldCheck size={16} />
-                  <div>
-                    <strong>{v.category}</strong>
-                    <p>{v.requirements}</p>
-                  </div>
-                </div>
-              ))}
-              <h3>Made a little more personal</h3>
-              {preview.plan.ideas.map((idea, i) => (
-                <div className="plan-idea" key={i}>
-                  <Sparkles size={16} />
-                  <div>
-                    <strong>{idea.title}</strong>
-                    <p>{idea.detail}</p>
-                  </div>
-                </div>
-              ))}
-              <div className="notice">
-                <CircleAlert size={17} />
-                <p>
-                  Planning estimates, not confirmed prices or reservations.
-                  Review safety, accessibility and local requirements with your
-                  vendors.
-                </p>
-              </div>
-              <button className="button primary full-width" onClick={usePlan}>
-                Create a new event with this plan
-                <ArrowRight size={17} />
-              </button>
-              <p className="form-footnote">
-                Your current event stays saved. A new event is created with this
-                plan.
-              </p>
-            </section>
+            <PlanPreview preview={preview} onUse={usePlan} />
           ) : (
             <section className="studio-placeholder">
               <div className="placeholder-art">
@@ -501,89 +308,19 @@ export function Studio({
         </div>
       </div>
       {showModels && (
-        <Modal
-          title="Find your planning companion."
-          description="Live OpenRouter text model catalog. One model handles each request."
+        <ModelPicker
+          models={models}
+          model={model}
+          catalogSource={catalogSource}
+          loading={loading}
+          refresh={catalog.refresh}
+          onSelect={catalog.select}
           onClose={() => setShowModels(false)}
-        >
-          <label>
-            Search models
-            <input
-              type="search"
-              value={modelSearch}
-              onChange={(e) => setModelSearch(e.target.value)}
-              placeholder="Search OpenAI, Anthropic, Google, Qwen…"
-            />
-          </label>
-          <label className="checkbox-label model-free">
-            <input
-              type="checkbox"
-              checked={freeOnly}
-              onChange={(e) => setFreeOnly(e.target.checked)}
-            />
-            Show free models only
-          </label>
-          {catalogSource !== "live" && (
-            <p className="notice">
-              The live catalog is unavailable right now. A default free router
-              is available; try refreshing the page later.
-            </p>
-          )}
-          <button
-            className="text-link"
-            disabled={loading || catalogSource === "loading"}
-            onClick={() => setCatalogRefresh((n) => n + 1)}
-          >
-            <RefreshCw size={14} />
-            {catalogSource === "loading"
-              ? "Refreshing catalog…"
-              : "Refresh model catalog"}
-          </button>
-          <p className="field-note">
-            {filtered.length} models match your filters.
-          </p>
-          <div className="model-list">
-            {filtered.length ? (
-              filtered.map((m) => (
-                <button
-                  key={m.id}
-                  className={`model-option ${model === m.id ? "selected" : ""}`}
-                  aria-pressed={model === m.id}
-                  onClick={() => {
-                    setModel(m.id);
-                    setShowModels(false);
-                  }}
-                >
-                  <span>
-                    <strong>{m.name}</strong>
-                    <small>{m.id}</small>
-                    {!m.free && hasKnownPricing(m) && (
-                      <small>
-                        ${(Number(m.inputPrice) * 1000000).toFixed(2)} input / $
-                        {(Number(m.outputPrice) * 1000000).toFixed(2)} output
-                        per 1M tokens
-                      </small>
-                    )}
-                  </span>
-                  <span className="pill">
-                    {m.free
-                      ? "Free"
-                      : hasKnownPricing(m)
-                        ? "Paid"
-                        : "Pricing unavailable"}
-                  </span>
-                  {model === m.id && <Check size={17} />}
-                </button>
-              ))
-            ) : (
-              <p className="mini-empty">No models match that search.</p>
-            )}
-          </div>
-        </Modal>
+        />
       )}
     </>
   );
 }
 function PlusSmall() {
-  return <span>+</span>;
+  return <span aria-hidden="true">+</span>;
 }

@@ -9,15 +9,15 @@ export class PageBoundary extends Component<
   },
   { failed: boolean }
 > {
-  state = { failed: false };
+  override state = { failed: false };
   static getDerivedStateFromError() {
     return { failed: true };
   }
-  componentDidUpdate(previous: Readonly<{ resetKey: string }>) {
+  override componentDidUpdate(previous: Readonly<{ resetKey: string }>) {
     if (this.state.failed && previous.resetKey !== this.props.resetKey)
       this.setState({ failed: false });
   }
-  render() {
+  override render() {
     return this.state.failed ? (
       <section className="panel recovery-screen" role="alert">
         <h1>This page needs a fresh start.</h1>

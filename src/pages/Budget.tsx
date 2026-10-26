@@ -1,3 +1,4 @@
+import { useFormValidation } from "../lib/useFormValidation";
 import { useState, type FormEvent } from "react";
 import {
   Download,
@@ -22,32 +23,32 @@ export function BudgetPage({
 }) {
   const [editing, setEditing] = useState<Budget | null | false>(false);
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [error, setError] = useState("");
+  const validation = useFormValidation();
+  const { error, errorId } = validation;
   const t = totals(event);
   function save(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    const parsed = budgetSchema.safeParse({
-      id: editing ? editing.id : uid(),
-      category: f.get("category"),
-      planned: Number(f.get("planned")),
-      paid: Number(f.get("paid")),
-    });
-    if (!parsed.success) {
-      setError(
-        "Enter a category and nonnegative whole amounts up to 1,000,000,000.",
-      );
-      return;
-    }
+    const parsed = validation.parse(
+      budgetSchema,
+      {
+        id: editing ? editing.id : uid(),
+        category: f.get("category"),
+        planned: Number(f.get("planned")),
+        paid: Number(f.get("paid")),
+      },
+      e.currentTarget,
+    );
+    if (!parsed) return;
     if (!editing && event.budgets.length >= 100) {
-      setError("You can add up to 100 budget categories.");
+      validation.fail("You can add up to 100 budget categories.");
       return;
     }
     onUpdate({
       ...event,
       budgets: editing
-        ? event.budgets.map((b) => (b.id === editing.id ? parsed.data : b))
-        : [...event.budgets, parsed.data],
+        ? event.budgets.map((b) => (b.id === editing.id ? parsed : b))
+        : [...event.budgets, parsed],
     });
     setEditing(false);
     notify("Budget updated.");
@@ -86,7 +87,7 @@ export function BudgetPage({
               className="button primary"
               onClick={() => {
                 setEditing(null);
-                setError("");
+                validation.clear();
               }}
             >
               <Plus size={17} />
@@ -195,7 +196,7 @@ export function BudgetPage({
                           aria-label={`Edit ${b.category}`}
                           onClick={() => {
                             setEditing(b);
-                            setError("");
+                            validation.clear();
                           }}
                         >
                           <Pencil size={16} />
@@ -250,6 +251,7 @@ export function BudgetPage({
                 Category
                 <input
                   name="category"
+                  {...validation.input("category")}
                   required
                   maxLength={80}
 
@@ -260,6 +262,7 @@ export function BudgetPage({
                 Planned ({event.currency})
                 <input
                   name="planned"
+                  {...validation.input("planned")}
                   type="number"
                   min="0"
                   max="1000000000"
@@ -272,6 +275,7 @@ export function BudgetPage({
                 Paid ({event.currency})
                 <input
                   name="paid"
+                  {...validation.input("paid")}
                   type="number"
                   min="0"
                   max="1000000000"
@@ -282,7 +286,7 @@ export function BudgetPage({
               </label>
             </div>
             {error && (
-              <p role="alert" className="form-error">
+              <p role="alert" id={errorId} className="form-error">
                 {error}
               </p>
             )}
