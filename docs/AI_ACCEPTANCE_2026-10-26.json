@@ -387,5 +387,20 @@
         ]
       }
     }
-  ]
+  ],
+  "browserVerification": {
+    "method": "Imported the previously verified real API plans using the public Settings backup workflow; this is separate from the mocked Studio credential-entry component test.",
+    "originalRecordsPreserved": 3,
+    "totalRecords": 6,
+    "importApplied": true,
+    "reloadedWithSavedRecords": true,
+    "fullExportRoundTripMatches": true,
+    "observedWeddingBudget": 60000,
+    "observedWeddingContingency": 6000,
+    "observedWeddingTaskCount": 8,
+    "observedWeddingVendorCount": 2,
+    "observedQuotedAmount": 0,
+    "observedBookedCount": 0,
+    "observedModelProvenance": "openai/gpt-4.1-nano"
+  }
 }
